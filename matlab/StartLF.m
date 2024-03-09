@@ -9,5 +9,6 @@ import PrincetonInstruments.LightField.AddIns.*;
 
 lfi = lfm(true);
 
+% Assuming this preloads default settings and environment setup?
 lfi.load_experiment('Raman10m');
 disp('Ready for experiments (pending camera cooldown)')

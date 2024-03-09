@@ -7,6 +7,11 @@ acquisitions = 1;
 repacktime = 1;     
 scantime = 1;
 
+% Ideas:
+% increase number of acquisitions
+% Change the time period 
+% Change the execution mode
+
 for i = 1:acquisitions
     N = num2str(i);
     fprintf('%d second repack pause before scan %s.\n',repacktime,N)
