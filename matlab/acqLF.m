@@ -1,16 +1,13 @@
 tic
-nameconvention = '11-10-23-NdYAGPos7Temp450time100-120';
+nameconvention = '21-10-21RamanAN';
 pathname = (['C:/temp/' nameconvention '/']);
 mkdir(pathname);
 
-acquisitions = 1;
-repacktime = 1;     
-scantime = 1;
+acquisitions = 200;
+repacktime = 1; 
+scantime = 10;
 
-% Ideas:
-% increase number of acquisitions
-% Change the time period 
-% Change the execution mode
+
 
 for i = 1:acquisitions
     N = num2str(i);
