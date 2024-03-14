@@ -41,9 +41,6 @@ lfi = lmf(true)classdef (ConstructOnLoad = true) lfm
         function set_frames(obj,value)
             obj.set(PrincetonInstruments.LightField.AddIns.ExperimentSettings.FrameSettingsFramesToStore,value);
         end
-        function set_CCD_on_acc(obj, value)
-            obj.set(PrincetonInstruments.LightField.AddIns.CameraSettings.ReadoutControlAccumulations,value);
-        end
         function [data, wavelength] = acquire(obj)
             import System.IO.FileAccess;
             obj.experiment.Acquire();

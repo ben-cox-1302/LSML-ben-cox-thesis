@@ -32,9 +32,9 @@ repacktime = 1;
 scantime = 1;
 
 
-lfi.set_CCD_on_acc(1) % get each pulse back 
+lfi.set_CCD_on_acc(1) % get each pulse back =
 
-time_to_run = 10; % secs (The value must be a positive, even integer)
+time_to_run = 10;
 
 acquisitions = time_to_run * 20; % 20Hz laser
 

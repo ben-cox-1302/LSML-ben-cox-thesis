@@ -3,8 +3,8 @@ nameconvention = '21-10-21RamanAN';
 pathname = (['C:/temp/' nameconvention '/']);
 mkdir(pathname);
 
-acquisitions = 200;
-repacktime = 1; 
+acquisitions = 1;
+repacktime = 10; 
 scantime = 10;
 
 
