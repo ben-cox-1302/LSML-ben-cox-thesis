@@ -3,36 +3,54 @@ import glob
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import zipfile
 
-def load_csv_as_matrices(folder_path):
-    # Construct the file pattern to match CSV files
-    pattern = os.path.join(folder_path, '*.csv')
-    
-    # Retrieve all CSV files in the folder
-    all_csv_files = glob.glob(pattern)
-    
-    # Filter out any files containing "Wavelengths" in their filenames
-    csv_files = [file for file in all_csv_files if "Wavelengths" not in os.path.basename(file)]
-    
-    # List to hold each file's data as a NumPy array
-    data_matrices = []
-    
-    # Load each CSV file into a NumPy array
-    for file_path in csv_files:
-        df = pd.read_csv(file_path, header=None)  # Adjust for headers if necessary
-        data_matrices.append(df.values)
+def load_csv_as_matrices(folder_path, skip_alternate_rows=False):
+    # Find all zip files in the given directory
+    zip_files = glob.glob(os.path.join(folder_path, '*.zip'))
+    if not zip_files:
+        raise FileNotFoundError("No zip files found in the specified directory.")
+
+    # List to hold data from all CSV files across all zip files
+    all_data_matrices = []
+
+    # Process each zip file
+    for zip_file_path in zip_files:
+        # Extract the zip file in the same directory
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_ref.extractall(folder_path)
+        
+        # Construct the directory path of the extracted contents
+        extracted_folder = os.path.join(folder_path, os.path.splitext(os.path.basename(zip_file_path))[0])
+
+        # Construct the file pattern to match CSV files in the extracted directory
+        pattern = os.path.join(extracted_folder, '*.csv')
+        
+        # Retrieve all CSV files in the extracted folder
+        all_csv_files = glob.glob(pattern)
+        
+        # Filter out any files containing "Wavelengths" in their filenames
+        csv_files = [file for file in all_csv_files if "Wavelengths" not in os.path.basename(file)]
+        
+        # Determine skiprows based on the boolean parameter
+        skiprows = (lambda x: x % 2 == 1) if skip_alternate_rows else None
+        
+        # Load each CSV file into a NumPy array with optimized types and using the skiprows setting
+        for file_path in csv_files:
+            df = pd.read_csv(file_path, header=None, skiprows=skiprows, dtype=np.float32)
+            all_data_matrices.append(df.values)
 
     # Stack all individual matrices into a single NumPy array
     # Ensure all arrays have the same shape for stacking
-    if data_matrices:
-        stacked_array = np.stack(data_matrices)
+    if all_data_matrices:
+        stacked_array = np.stack(all_data_matrices)
     else:
         stacked_array = np.array([])  # Handle the case with no valid CSV files
     
     return stacked_array
 
 # Specify the folder path
-directory = 'data/data_raw/'
+directory = 'data/data_raw/Binary_Classifier/'
 
 # List all files and directories in the specified directory
 files_and_folders = os.listdir(directory)
@@ -44,7 +62,7 @@ folders = [item for item in files_and_folders if os.path.isdir(os.path.join(dire
 base_directory = 'data/data_processed'
 
 # Generate a folder name with a specific string and the current date-time
-folder_name = f"x_y_processed_{datetime.now().strftime("%Y%m%d-%H%M%S")}"
+folder_name = f"x_y_processed_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
 # Create the full directory path
 save_path = os.path.join(base_directory, folder_name)
