@@ -30,30 +30,6 @@ from tensorflow.keras import backend as K
 import deep_learning_helperFuncs
 import evaluation_functions
 
-def generate_data(x, y, batch_size=32, augment=False):
-    """
-    Loads data into a tf.data.Dataset and prepares it for training by
-    shuffling, batching, and optionally augmenting.
-    """
-    # Create a tf.data.Dataset object from your numpy arrays
-    dataset = tf.data.Dataset.from_tensor_slices((x, y))
-
-    # Shuffle the dataset (important for training)
-    dataset = dataset.shuffle(buffer_size=len(x))
-
-    # Data augmentation can be added here if needed
-    if augment:
-        # Example of a simple augmentation: flipping the image horizontally
-        dataset = dataset.map(lambda x, y: (tf.image.flip_left_right(x), y))
-
-    # Batch the data
-    dataset = dataset.batch(batch_size)
-
-    # Prefetch data for faster consumption
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)
-
-    return dataset
-
 logging.getLogger('matplotlib.font_manager').disabled = True
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -72,11 +48,11 @@ else:
     file_path = os.path.join(data_to_use, file)
     Y = np.load(file_path)
 
-batch_size = 4
+batch_size = 16
 learning_rate = 0.0001
 
 # Split the data into training and test sets with stratification
-#X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
 #
 ## Save the arrays to .npy files
 #np.save('data/X_train.npy', X_train)
@@ -85,10 +61,10 @@ learning_rate = 0.0001
 #np.save('data/Y_test.npy', Y_test)
 
 # Load the arrays from .npy files
-X_train = np.load('data/X_train.npy')
-X_test = np.load('data/X_test.npy')
-Y_train = np.load('data/Y_train.npy')
-Y_test = np.load('data/Y_test.npy')
+#X_train = np.load('data/X_train.npy')
+#X_test = np.load('data/X_test.npy')
+#Y_train = np.load('data/Y_train.npy')
+#Y_test = np.load('data/Y_test.npy')
 
 # Check the size of the outputs to ensure the split is as expected
 print("Training set shape:", X_train.shape, Y_train.shape)
@@ -98,11 +74,10 @@ print("Test set shape:", X_test.shape, Y_test.shape)
 X_train = np.expand_dims(X_train, axis=-1)  # Adds a channel dimension
 X_test = np.expand_dims(X_test, axis=-1)    # Adds a channel dimension
 
-evaluation_functions.plot_images(X_train, Y_train)
+print(X_train[1].shape)
+print(Y_test[1:50])
 
-# Load your training and validation data as tf.data.Dataset
-train_dataset = generate_data(X_train, Y_train, batch_size=batch_size)
-val_dataset = generate_data(X_test, Y_test, batch_size=batch_size)
+evaluation_functions.plot_images(X_train, Y_train)
 
 # Build the DCNN
 
@@ -128,7 +103,6 @@ outputs = layers.Dense(1, activation='sigmoid')(x)
 
 # Construct and compile the model
 model_vgg = keras.Model(inputs=inputs, outputs=outputs, name='model_vgg')
-model_vgg.summary()
 
 optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
 
@@ -143,16 +117,26 @@ model_vgg.compile(
 # we'll capture the returned history object that will tell us about the training performance
 vgg_binClassifier_train_start = process_time()
 
-# Train the DCNN using the Dataset
-history = model_vgg.fit(
-    train_dataset,
-    epochs=3,
-    validation_data=val_dataset,
-    verbose=1
-)
+# Define batch_size and epochs
+epochs = 3
 
+# Split the training data into training and validation sets
+(X_train, X_val, Y_train, Y_val) = train_test_split(X_train, Y_train, test_size=0.2, random_state=42)
+
+# Generate datasets for the new training data and validation data
+train_dataset = deep_learning_helperFuncs.generate_data(X_train, Y_train, batch_size)
+validation_dataset = deep_learning_helperFuncs.generate_data(X_val, Y_val, batch_size)
+
+# Fit the model
+history = model_vgg.fit(train_dataset,
+                        epochs=epochs,
+                        validation_data=validation_dataset,
+                        steps_per_epoch=len(X_train) // batch_size,
+                        validation_steps=len(X_val) // batch_size)
 K.clear_session()
 
+print(X_train.shape)
+print(Y_train.shape)
 
 deep_learning_helperFuncs.predict_in_batches(model_vgg, X_train, Y_train, batch_size=32)
 deep_learning_helperFuncs.predict_in_batches(model_vgg, X_test, Y_test, batch_size=32)
@@ -181,3 +165,12 @@ if not os.path.exists('plots'):
 plt.savefig(os.path.join('plots', 'LossAcc.png'))
 
 evaluation_functions.create_confusion_matrix_comparison(model_vgg, X_train, Y_train, X_test, Y_test, 'DCNN_binClassifier')
+
+# Assuming `X_test` and `Y_test` are your test data and labels respectively
+predictions = model_vgg.predict(X_test[:10])  # Make predictions on the first 10 samples
+
+# Define a function to display images with their predicted values
+
+
+# Display images with predictions
+#display_images_with_predictions(X_test[:10], predictions, Y_test[:10])
