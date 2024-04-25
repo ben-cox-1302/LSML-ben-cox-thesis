@@ -90,3 +90,20 @@ memmap_Y.flush()
 
 print(f'Concatenated data saved as memory-mapped files in {save_path}')
 
+# Saving the concatenated memory-mapped arrays to .npy files
+final_X_path = os.path.join(save_path, 'final_X.npy')
+final_Y_path = os.path.join(save_path, 'final_Y.npy')
+
+# Ensure all changes are written to disk before converting to .npy
+memmap_X.flush()
+memmap_Y.flush()
+
+# Load the memory-mapped data into numpy arrays and save
+final_X = np.array(memmap_X)
+final_Y = np.array(memmap_Y)
+
+np.save(final_X_path, final_X)
+np.save(final_Y_path, final_Y)
+
+print(f'Final concatenated data X saved to {final_X_path}')
+print(f'Final concatenated data Y saved to {final_Y_path}')
