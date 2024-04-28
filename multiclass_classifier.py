@@ -2,6 +2,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import datetime
 import numpy as np
+from keras.callbacks import LearningRateScheduler
 
 import keras
 from keras import layers
@@ -14,65 +15,43 @@ import evaluation_functions
 import chardet
 from keras.utils import to_categorical
 import deep_learning_helperFuncs
+import h5py
+import math
 
-def plot_images(x, y):
-    fig = plt.figure(figsize=[15, 5])
-    for i in range(20):
-        ax = fig.add_subplot(2, 10, i + 1)
-        ax.imshow(x[i,:])
-        ax.set_title(y[i])
-        ax.axis('off')
-    plt.show()
+
+# Define a schedule function:
+def step_decay(epoch):
+    initial_lr = 0.01  # Start with a learning rate of 0.01
+    drop = 0.5  # Reduce by half
+    epochs_drop = 10.0  # Every 10 epochs
+    lr = initial_lr * math.pow(drop, math.floor((1+epoch)/epochs_drop))
+    return lr
+
+
+# Create a LearningRateScheduler callback:
+lr_scheduler = LearningRateScheduler(step_decay)
 
 # Specify the directory where your .npy files are saved
-data_to_use = 'data/data_processed/x_y_processed_20240425-045539/'
-
-# Check if the directory exists
-if not os.path.exists(data_to_use):
-    print("Directory does not exist:", data_to_use)
-else:
-    # Load X and Y data with memory mapping
-    file_path_X = os.path.join(data_to_use, 'final_X.npy')
-    file_path_Y = os.path.join(data_to_use, 'final_Y.npy')
-
-    if os.path.exists(file_path_X) and os.path.exists(file_path_Y):
-        X = np.load(file_path_X, mmap_mode='r')
-        Y = np.load(file_path_Y, mmap_mode='r')
-
-print(X.shape)
-print(Y.shape)
-
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42, stratify=Y)
-
-# plot_images(X_train, Y_train)
-
-print(Y_train[1])
-
-# convert the y-data to categoricals
-Y_train = to_categorical(Y_train, 9)
-Y_test = to_categorical(Y_test, 9)
-
-print(Y_train[1])
-
-# Assuming `X_train` and `X_test` are your training and testing datasets respectively
-X_train = np.expand_dims(X_train, axis=-1)  # Adds a channel dimension
-X_test = np.expand_dims(X_test, axis=-1)    # Adds a channel dimension
-
-print(X_train[1].shape)
-for array in X_train[1:2]:
-    print(array.dtype)
+data_to_use = 'data/data_processed/20240428_111039-1000_sample_multiclass/processed_data.h5'
 
 inputs = keras.Input(shape=(253, 1024, 1), name='img')
 
-x = layers.Conv2D(filters=4, kernel_size=(3, 3), padding='same', activation='relu')(inputs)
+x = layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='relu')(inputs)
 x = layers.MaxPool2D(pool_size=(2, 2))(x)
 
-x = layers.Conv2D(filters=8, kernel_size=(3, 3), padding='same', activation='relu')(x)
+x = layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='relu')(x)
+x = layers.MaxPool2D(pool_size=(2, 2))(x)
+
+x = layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='relu')(x)
+x = layers.MaxPool2D(pool_size=(2, 2))(x)
+
+x = layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='relu')(x)
 x = layers.MaxPool2D(pool_size=(2, 2))(x)
 
 x = layers.Flatten()(x)
 
-x = layers.Dense(16, activation='relu')(x)
+x = layers.Dense(64, activation='relu')(x)
+x = layers.Dropout(0.5)(x)  # Add dropout to prevent overfitting
 
 outputs = layers.Dense(9, activation='softmax')(x)
 
@@ -87,24 +66,29 @@ model_vgg.compile(
   # compute the accuracy metric, in addition to the loss
   metrics=['accuracy'])
 
-# Split the training data into training and validation sets
-(X_train, X_val, Y_train, Y_val) = train_test_split(X_train, Y_train, test_size=0.2, random_state=42)
+batch_size = 264
 
-batch_size = 1
-
-# Generate datasets for the new training data and validation data
-train_dataset = deep_learning_helperFuncs.generate_data(X_train, Y_train, batch_size)
-validation_dataset = deep_learning_helperFuncs.generate_data(X_val, Y_val, batch_size)
+# Create generators for training and validation
+train_gen = deep_learning_helperFuncs.hdf5_generator(data_to_use, 'train', batch_size)
+val_gen = deep_learning_helperFuncs.hdf5_generator(data_to_use, 'val', batch_size)
 
 # Fit the model
-history = model_vgg.fit(train_dataset,
-                        epochs=1,
-                        validation_data=validation_dataset,
-                        steps_per_epoch=len(X_train) // batch_size,
-                        validation_steps=len(X_val) // batch_size)
+# Determine the steps per epoch for training and validation
+with h5py.File(data_to_use, 'r') as f:
+    num_train_samples = f['X_train'].shape[0]
+    num_val_samples = f['X_val'].shape[0]  # Adjust if separate validation set
 
-deep_learning_helperFuncs.predict_in_batches(model_vgg, X_train, Y_train, batch_size=batch_size, is_multiclass=True)
-deep_learning_helperFuncs.predict_in_batches(model_vgg, X_test, Y_test, batch_size=batch_size, is_multiclass=True)
+early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.00001)
+model_checkpoint = keras.callbacks.ModelCheckpoint(filepath='best_model.keras', monitor='val_accuracy', save_best_only=True)
+
+# Fit the model
+history = model_vgg.fit(train_gen,
+                        steps_per_epoch=num_train_samples // batch_size,
+                        validation_data=val_gen,
+                        validation_steps=num_val_samples // batch_size,
+                        epochs=50,
+                        callbacks=[early_stopping, reduce_lr, model_checkpoint])
 
 fig = plt.figure(figsize=[15, 25])
 ax = fig.add_subplot(2, 1, 1)
@@ -128,6 +112,9 @@ if not os.path.exists('plots'):
 # Save the figure
 plt.savefig(os.path.join('plots', 'LossAcc.png'))
 
-evaluation_functions.create_confusion_matrix_comparison(model_vgg, X_train, Y_train, X_test, Y_test,
-                                                        'DCNN_multiClass', is_multiclass=True)
+# Example of calling the function for training and testing datasets
+deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'train', batch_size=64, is_multiclass=True)
+deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'test', batch_size=64, is_multiclass=True)
+
+evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', 'vgg_model', is_multiclass=True)
 

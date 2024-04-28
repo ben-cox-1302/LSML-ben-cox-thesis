@@ -17,52 +17,63 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 import logging
 from tensorflow.keras import backend as K
+import h5py
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-def predict_in_batches(model, X_data, Y_true, batch_size=32, is_multiclass=False):
+def predict_in_batches(model, file_path, dataset_prefix, batch_size=32, is_multiclass=False):
     """
-    Predicts outputs in batches, adapting to both binary and multiclass classifications with appropriate activation functions,
-    reducing memory usage on GPU.
+    Predicts outputs in batches directly from an HDF5 file, adapting to both binary and multiclass
+    classifications with appropriate activation functions, and reducing memory usage on the GPU.
     Parameters:
         model: The trained model to use for predictions.
-        X_data: Input data for predictions (e.g., X_train or X_test).
-        Y_true: True labels for the data (e.g., Y_train or Y_test). Expected to be one-hot encoded for multiclass.
+        file_path: Path to the HDF5 file containing 'X' and 'Y' datasets.
+        dataset_prefix: A string to specify the dataset group, e.g., 'train', 'test', or 'val'.
         batch_size: Size of each batch to use during prediction.
         is_multiclass: Boolean indicating if the classification is multiclass (True) or binary (False).
     Returns:
         None; prints the classification report based on predictions.
     """
     predictions = []
+    true_labels = []
 
-    # Generate predictions in batches
-    for i in range(0, len(X_data), batch_size):
-        batch = X_data[i:i + batch_size]
-        batch_predictions = model.predict(batch, verbose=0)
-        predictions.extend(batch_predictions)
+    # Open the HDF5 file and read batches directly
+    with h5py.File(file_path, 'r') as h5f:
+        X_data = h5f[f'X_{dataset_prefix}']
+        Y_true = h5f[f'Y_{dataset_prefix}']
+        num_samples = X_data.shape[0]
 
-    # Convert predictions list to a numpy array
+        # Generate predictions in batches
+        for i in range(0, num_samples, batch_size):
+            end_i = min(i + batch_size, num_samples)
+            batch_X = X_data[i:end_i]
+            batch_Y = Y_true[i:end_i]
+
+            # Make predictions on the batch
+            batch_predictions = model.predict(batch_X, verbose=0)
+            predictions.extend(batch_predictions)
+            true_labels.extend(batch_Y)
+
+    # Convert lists to numpy arrays for processing
     predictions = np.array(predictions)
+    true_labels = np.array(true_labels)
 
+    # Process predictions based on the type of classification
     if is_multiclass:
-        # Convert probabilities to predicted class indices for multiclass classification
         predicted_labels = np.argmax(predictions, axis=1)
-        # Convert one-hot encoded true labels to class indices
-        if Y_true.ndim > 1 and Y_true.shape[1] > 1:
-            Y_true = np.argmax(Y_true, axis=1)
+        true_labels = np.argmax(true_labels, axis=1)
     else:
-        # Convert probabilities to binary predictions for binary classification
         predicted_labels = (predictions.flatten() > 0.5).astype(int)
-        # Ensure the true labels array is flat for binary classification
-        Y_true = np.array(Y_true).flatten()
 
     # Print the classification report
-    print(classification_report(Y_true, predicted_labels))
+    print(classification_report(true_labels, predicted_labels))
 
-    return predictions, predicted_labels, Y_true
+    # Optionally, return the predictions and true labels for further analysis
+    return predictions, predicted_labels, true_labels
+
 
 
 def generate_data(x, y, batch_size=32, augment=False):
@@ -89,3 +100,19 @@ def generate_data(x, y, batch_size=32, augment=False):
 
     # Make sure the dataset can be iterated indefinitely
     return dataset.repeat()  # Repeat the dataset indefinitely
+
+
+def hdf5_generator(file_path, dataset_type='train', batch_size=32):
+    with h5py.File(file_path, 'r') as f:
+        X_key = f'X_{dataset_type}'
+        Y_key = f'Y_{dataset_type}'
+        X = f[X_key]
+        Y = f[Y_key]
+        num_samples = X.shape[0]
+
+        while True:  # Loop forever so the generator never terminates
+            for start in range(0, num_samples, batch_size):
+                end = min(start + batch_size, num_samples)
+                X_batch = X[start:end]
+                Y_batch = Y[start:end]
+                yield X_batch, Y_batch

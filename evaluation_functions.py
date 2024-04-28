@@ -8,6 +8,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt     # for plotting
 import numpy as np                  # for reshaping, array manipulation
 import tensorflow as tf             # for bulk image resize
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.svm import SVC
 from time import process_time
 from sklearn.model_selection import train_test_split
@@ -25,39 +26,39 @@ logging.getLogger('matplotlib.font_manager').disabled = True
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-def create_confusion_matrix_comparison(model, train, Y_train, test, Y_test, model_type, is_multiclass=False):
+def create_confusion_matrix_comparison(model, file_path, train_prefix, test_prefix, model_type, is_multiclass=False):
     """
-    Generates confusion matrices for both training and testing datasets, showing performance visualization.
+    Generates confusion matrices for both training and testing datasets from an HDF5 file,
+    showing performance visualization using predictions made in batches.
 
     Args:
         model: The trained model to use for predictions.
-        train: Training data (features).
-        Y_train: True labels for the training data.
-        test: Testing data (features).
-        Y_test: True labels for the testing data.
+        file_path: Path to the HDF5 file containing 'X' and 'Y' datasets.
+        train_prefix: Prefix for training dataset keys in the HDF5 file (e.g., 'train').
+        test_prefix: Prefix for testing dataset keys in the HDF5 file (e.g., 'test').
         model_type: A string label to describe the model (used in file naming).
         is_multiclass: Boolean indicating if the model handles multiclass classification.
     """
-    # Create figure
+    # Create figure for plotting confusion matrices
     fig = plt.figure(figsize=[10, 15])
 
     # Training set visualization
     ax = fig.add_subplot(2, 1, 1)
-    pred_train, indexes_train, gt_idx_train = deep_learning_helperFuncs.predict_in_batches(model, train, Y_train, batch_size=32, is_multiclass=is_multiclass)
+    pred_train, indexes_train, gt_idx_train = deep_learning_helperFuncs.predict_in_batches(model, file_path, train_prefix, batch_size=32, is_multiclass=is_multiclass)
     labels = np.unique(gt_idx_train)
-    confusion_mtx_train = tf.math.confusion_matrix(gt_idx_train, indexes_train, labels=labels)
+    confusion_mtx_train = confusion_matrix(gt_idx_train, indexes_train)
     sns.heatmap(confusion_mtx_train, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
-    ax.set_title('Training Set Performance: {:.2f}'.format(sklearn.metrics.accuracy_score(gt_idx_train, indexes_train)))
+    ax.set_title('Training Set Performance: {:.2f}'.format(accuracy_score(gt_idx_train, indexes_train)))
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
 
     # Test set visualization
     ax = fig.add_subplot(2, 1, 2)
-    pred_test, indexes_test, gt_idx_test = deep_learning_helperFuncs.predict_in_batches(model, test, Y_test, batch_size=32, is_multiclass=is_multiclass)
+    pred_test, indexes_test, gt_idx_test = deep_learning_helperFuncs.predict_in_batches(model, file_path, test_prefix, batch_size=32, is_multiclass=is_multiclass)
     labels = np.unique(gt_idx_test)
-    confusion_mtx_test = tf.math.confusion_matrix(gt_idx_test, indexes_test, labels=labels)
+    confusion_mtx_test = confusion_matrix(gt_idx_test, indexes_test)
     sns.heatmap(confusion_mtx_test, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
-    ax.set_title('Testing Set Performance: {:.2f}'.format(sklearn.metrics.accuracy_score(gt_idx_test, indexes_test)))
+    ax.set_title('Testing Set Performance: {:.2f}'.format(accuracy_score(gt_idx_test, indexes_test)))
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
 
@@ -102,5 +103,33 @@ def display_images_with_predictions(x_data, predictions, true_labels, model, num
         plt.imshow(x_data[i].squeeze(), cmap='gray')  # Assuming images are grayscale
         plt.title(f"Predicted: {predictions[i][0]:.2f}\nActual: {true_labels[i]}")
         plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+
+def show_samples(X, Y, samples_per_class=2):
+    """
+    Shows a specified number of samples for each class as an image.
+    Parameters:
+        X : numpy.ndarray - Array of image data.
+        Y : numpy.ndarray - One-hot encoded class labels.
+        samples_per_class : int - Number of samples to show per class (default is 2).
+    """
+    if Y.ndim != 2 or Y.shape[1] <= 1:
+        raise ValueError("Y must be a one-hot encoded 2D array with more than one class.")
+    num_classes = Y.shape[1]
+    plt.figure(figsize=(10, num_classes * 5))
+    for i in range(num_classes):
+        class_indices = np.where(Y[:, i] == 1)[0]
+        if len(class_indices) < samples_per_class:
+            samples = class_indices  # Use whatever is available if less than requested
+        else:
+            samples = np.random.choice(class_indices, samples_per_class, replace=False)
+
+        for j, sample in enumerate(samples):
+            plt.subplot(num_classes, samples_per_class, i * samples_per_class + j + 1)
+            plt.imshow(X[sample].squeeze(), cmap=None if X[sample].shape[-1] == 3 else 'gray')
+            plt.title(f'Class {i}')
+            plt.axis('off')
     plt.tight_layout()
     plt.show()
