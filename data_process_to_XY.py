@@ -5,8 +5,9 @@ import numpy as np
 from datetime import datetime
 import zipfile
 import matplotlib.pyplot as plt
+import h5py
 
-def load_csv_as_matrices(folder_path, skip_alternate_rows=False):
+def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=False):
     zip_files = glob.glob(os.path.join(folder_path, '*.zip'))
     if not zip_files:
         raise FileNotFoundError("No zip files found in the specified directory.")
@@ -17,22 +18,23 @@ def load_csv_as_matrices(folder_path, skip_alternate_rows=False):
         extracted_folder = os.path.join(folder_path, os.path.splitext(os.path.basename(zip_file_path))[0])
         pattern = os.path.join(extracted_folder, '*.csv')
         all_csv_files = glob.glob(pattern)
+        if max_samples is not None:
+            all_csv_files = all_csv_files[:max_samples]  # Limit the number of CSV files processed
         csv_files = [file for file in all_csv_files if "Wavelengths" not in os.path.basename(file)]
         skiprows = (lambda x: x % 2 == 1) if skip_alternate_rows else None
         for file_path in csv_files:
             df = pd.read_csv(file_path, header=None, skiprows=skiprows, dtype=np.float32)
             all_data_matrices.append(df.values)
-    if all_data_matrices:
-        stacked_array = np.stack(all_data_matrices)
-    else:
-        stacked_array = np.array([])
-    return stacked_array
+    return np.stack(all_data_matrices) if all_data_matrices else np.array([])
+
+# User can specify the maximum number of samples to load from each folder
+max_samples_per_folder = 1000  # Set this to None to load all samples
 
 directory = 'data/data_raw/Multiclass/'
 files_and_folders = os.listdir(directory)
 folders = [item for item in files_and_folders if os.path.isdir(os.path.join(directory, item))]
 base_directory = 'data/data_processed'
-folder_name = f"x_y_processed_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+folder_name = f"x_y_processed_{max_samples_per_folder}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 save_path = os.path.join(base_directory, folder_name)
 if not os.path.exists(save_path):
     os.makedirs(save_path)
@@ -45,7 +47,7 @@ with open(labels_file_path, 'w') as f:
     for folder in folders:
         folder_path = os.path.join(directory, folder)
         print("Processing folder:", folder)
-        data_X = load_csv_as_matrices(folder_path)
+        data_X = load_csv_as_matrices(folder_path, max_samples=max_samples_per_folder)
         data_Y = np.full(len(data_X), i, dtype=np.uint8)
         if data_X.size > 0:
             label_data_X_path = os.path.join(save_path, f'data_X_label_{i}.npy')
@@ -62,11 +64,8 @@ total_size_Y = sum(sizes_Y)
 dtype_X = np.float32  # Assuming data_X uses float32
 dtype_Y = np.uint8    # Assuming data_Y uses uint8
 
-# Assuming all data_X arrays have the same shape beyond the first dimension
-sample_X = np.load(os.path.join(save_path, f'data_X_label_0.npy'))
-
-memmap_X = np.memmap(os.path.join(save_path, 'X.dat'), dtype=dtype_X, mode='w+', shape=(total_size_X, sample_X.shape[1], sample_X.shape[2]))
-memmap_Y = np.memmap(os.path.join(save_path, 'Y.dat'), dtype=dtype_Y, mode='w+', shape=total_size_Y)
+memmap_X = np.memmap(os.path.join(save_path, 'X.dat'), dtype=dtype_X, mode='w+', shape=(total_size_X, data_X.shape[1], data_X.shape[2]))
+memmap_Y = np.memmap(os.path.join(save_path, 'Y.dat'), dtype=dtype_Y, mode='w+', shape=(total_size_Y,))
 
 current_index_X = 0
 current_index_Y = 0
@@ -80,30 +79,21 @@ for idx in range(i):
     current_index_X += temp_X.shape[0]
     current_index_Y += temp_Y.shape[0]
 
-# Optional: Clean up individual label files if no longer needed
+memmap_X.flush()
+memmap_Y.flush()
+
+# Saving the concatenated data to an HDF5 file instead of .npy files
+with h5py.File(os.path.join(save_path, 'final_data.h5'), 'w') as h5f:
+    h5f.create_dataset('X', data=memmap_X, compression="gzip")
+    h5f.create_dataset('Y', data=memmap_Y, compression="gzip")
+
+print(f'Final concatenated data saved to {os.path.join(save_path, "final_data.h5")}')
+
+# Cleanup: Delete the .npy and .dat files
 for idx in range(i):
     os.remove(os.path.join(save_path, f'data_X_label_{idx}.npy'))
     os.remove(os.path.join(save_path, f'data_Y_label_{idx}.npy'))
+os.remove(os.path.join(save_path, 'X.dat'))
+os.remove(os.path.join(save_path, 'Y.dat'))
 
-memmap_X.flush()
-memmap_Y.flush()
-
-print(f'Concatenated data saved as memory-mapped files in {save_path}')
-
-# Saving the concatenated memory-mapped arrays to .npy files
-final_X_path = os.path.join(save_path, 'final_X.npy')
-final_Y_path = os.path.join(save_path, 'final_Y.npy')
-
-# Ensure all changes are written to disk before converting to .npy
-memmap_X.flush()
-memmap_Y.flush()
-
-# Load the memory-mapped data into numpy arrays and save
-final_X = np.array(memmap_X)
-final_Y = np.array(memmap_Y)
-
-np.save(final_X_path, final_X)
-np.save(final_Y_path, final_Y)
-
-print(f'Final concatenated data X saved to {final_X_path}')
-print(f'Final concatenated data Y saved to {final_Y_path}')
+print("Temporary .npy and .dat files have been deleted.")
