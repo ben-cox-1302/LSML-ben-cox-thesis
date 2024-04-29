@@ -8,7 +8,7 @@ import gc
 import evaluation_functions
 import matplotlib.pyplot as plt
 
-data_to_use = 'data/data_processed/x_y_processed_1000_20240428-094805/final_data.h5'
+data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/Multiclass/x_y_processed_1000_20240429-204041/final_data.h5'
 
 print("Loading in the data: ")
 with h5py.File(data_to_use, 'r') as h5f:
@@ -34,11 +34,11 @@ print("Saving the Data: ")
 # Define the date of processing and custom text
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-custom_text = "1000_sample_multiclass"
+custom_text = "2000_sample_binary_sanity"
 
 # Create the directory path
 folder_name = f"{date_of_processing}-{custom_text}"
-base_path = 'data/data_processed/'
+base_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/'
 full_path = os.path.join(base_path, folder_name)
 
 # Ensure the directory exists
