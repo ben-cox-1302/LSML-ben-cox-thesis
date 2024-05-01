@@ -145,11 +145,11 @@ def eval_model_2(model, train, train_y, test, test_y, model_type):
     # to a single index
     indexes = tf.argmax(pred, axis=1)
     gt_idx = tf.argmax(train_y, axis=1)
-
+    num_classes_train = train_y.shape[1]
     # plot the confusion matrix, I'm using tensorflow and seaborn here, but you could use
     # sklearn as well
     confusion_mtx = tf.math.confusion_matrix(gt_idx, indexes)
-    sns.heatmap(confusion_mtx, xticklabels=range(10), yticklabels=range(10),
+    sns.heatmap(confusion_mtx, xticklabels=range(num_classes_train), yticklabels=range(num_classes_train),
             annot=True, fmt='g', ax=ax)
     # set the title to the accuracy
     ax.set_title('Training Set Performance: %f' % sklearn.metrics.accuracy_score(gt_idx, indexes, normalize=True))
@@ -161,11 +161,20 @@ def eval_model_2(model, train, train_y, test, test_y, model_type):
     pred = model.predict(test, verbose=False);
     indexes = tf.argmax(pred, axis=1)
     gt_idx = tf.argmax(test_y, axis=1)
-
+    num_classes_test = test_y.shape[1]
     confusion_mtx = tf.math.confusion_matrix(gt_idx, indexes)
-    sns.heatmap(confusion_mtx, xticklabels=range(10), yticklabels=range(10),
+    sns.heatmap(confusion_mtx, xticklabels=range(num_classes_test), yticklabels=range(num_classes_test),
             annot=True, fmt='g', ax=ax)
     ax.set_title('Testing Set Performance: %f' % sklearn.metrics.accuracy_score(gt_idx, indexes, normalize=True))
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
-    plt.savefig(model_type + '_ConfMatrix_q3')
+
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+
+    save_name = model_type + '_ConfMatrix.png'
+
+    # Save the figure
+    plt.savefig(os.path.join('plots', save_name))
+
+
