@@ -17,13 +17,14 @@ from keras.utils import to_categorical
 import deep_learning_helperFuncs
 import h5py
 import math
+import sys
 
 batch_size = 32
 epochs = 10
 use_generator = False
 
 # Specify the directory where your .npy files are saved
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/20240501_143050-2000_sample_3_class/processed_data.h5'
+data_to_use = '/work/laserml/Data/Ben_Cox/data/Data_Staging/data_processed/20240501_143050-2000_sample_3_class/processed_data.h5'
 
 inputs = keras.Input(shape=(253, 1024, 1), name='img')
 
@@ -120,14 +121,13 @@ if not os.path.exists('plots'):
     os.makedirs('plots')
 
 # Save the figure
-plt.savefig(os.path.join('plots', 'LossAcc.png'))
+plt.savefig(os.path.join('plots', 'hpc_LossAcc.png'))
 
 if use_generator == True:
     # Example of calling the function for training and testing datasets
     deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'train', batch_size, is_multiclass=True)
     deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'test', batch_size, is_multiclass=True)
 
-    evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', 'sanity_check', is_multiclass=True)
+    evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', 'hpc_job', is_multiclass=True)
 else:
-    evaluation_functions.eval_model_2(model_vgg, X_train, Y_train, X_test, Y_test, 'sanity_check')
-
+    evaluation_functions.eval_model_2(model_vgg, X_train, Y_train, X_test, Y_test, 'hpc_job')
