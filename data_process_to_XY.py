@@ -28,12 +28,12 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
     return np.stack(all_data_matrices) if all_data_matrices else np.array([])
 
 # User can specify the maximum number of samples to load from each folder
-max_samples_per_folder = 1000  # Set this to None to load all samples
+max_samples_per_folder = 2000  # Set this to None to load all samples
 
-directory = 'data/data_raw/Multiclass/'
+directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/Multiclass/3ClassClassifier/'
 files_and_folders = os.listdir(directory)
 folders = [item for item in files_and_folders if os.path.isdir(os.path.join(directory, item))]
-base_directory = 'data/data_processed'
+base_directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/'
 folder_name = f"x_y_processed_{max_samples_per_folder}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 save_path = os.path.join(base_directory, folder_name)
 if not os.path.exists(save_path):

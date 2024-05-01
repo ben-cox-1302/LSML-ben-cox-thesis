@@ -23,7 +23,7 @@ epochs = 10
 use_generator = False
 
 # Specify the directory where your .npy files are saved
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/20240429_205341-2000_sample_binary_sanity/processed_data.h5'
+data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/20240501_143050-2000_sample_3_class/processed_data.h5'
 
 inputs = keras.Input(shape=(253, 1024, 1), name='img')
 
@@ -44,10 +44,10 @@ x = layers.MaxPool2D(pool_size=(2, 2))(x)
 
 x = layers.Flatten()(x)
 
-x = layers.Dense(264, activation='relu')(x)
+x = layers.Dense(512, activation='relu')(x)
 x = layers.Dropout(0.5)(x)  # Add dropout to prevent overfitting
 
-outputs = layers.Dense(2, activation='softmax')(x)
+outputs = layers.Dense(3, activation='softmax')(x)
 
 model_vgg = keras.Model(inputs=inputs, outputs=outputs, name='vgg')
 model_vgg.summary()
