@@ -18,6 +18,10 @@ import deep_learning_helperFuncs
 import h5py
 import math
 
+batch_size = 32
+epochs = 10
+use_generator = False
+
 # Specify the directory where your .npy files are saved
 data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/20240429_205341-2000_sample_binary_sanity/processed_data.h5'
 
@@ -40,17 +44,13 @@ x = layers.MaxPool2D(pool_size=(2, 2))(x)
 
 x = layers.Flatten()(x)
 
-x = layers.Dense(512, activation='relu')(x)
+x = layers.Dense(264, activation='relu')(x)
 x = layers.Dropout(0.5)(x)  # Add dropout to prevent overfitting
 
 outputs = layers.Dense(2, activation='softmax')(x)
 
 model_vgg = keras.Model(inputs=inputs, outputs=outputs, name='vgg')
 model_vgg.summary()
-
-batch_size = 32
-
-use_generator = False
 
 if use_generator == True:
     # Create generators for training and validation
@@ -90,13 +90,15 @@ if use_generator == True:
                             steps_per_epoch=num_train_samples // batch_size,
                             validation_data=val_gen,
                             validation_steps=num_val_samples // batch_size,
-                            epochs=25,
+                            epochs=epochs,
                             callbacks=[early_stopping, model_checkpoint])
 else:
     history = model_vgg.fit(X_train, Y_train,
                             batch_size=batch_size,
-                            epochs=25,
-                            validation_data=(X_val, Y_val), verbose=True)
+                            epochs=epochs,
+                            validation_data=(X_val, Y_val),
+                            verbose=True,
+                            callbacks=[early_stopping, model_checkpoint])
 
 fig = plt.figure(figsize=[15, 25])
 ax = fig.add_subplot(2, 1, 1)
@@ -125,7 +127,7 @@ if use_generator == True:
     deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'train', batch_size, is_multiclass=True)
     deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'test', batch_size, is_multiclass=True)
 
-    evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', 'vgg_model', is_multiclass=True)
+    evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', 'sanity_check', is_multiclass=True)
 else:
     evaluation_functions.eval_model_2(model_vgg, X_train, Y_train, X_test, Y_test, 'sanity_check')
 
