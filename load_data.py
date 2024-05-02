@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import shutil
 
 data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/x_y_processed_2000_20240501-141742/final_data.h5'
+folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/x_y_processed_2000_20240501-141742/folder_labels.txt'
 
 print("Loading in the data: ")
 with h5py.File(data_to_use, 'r') as h5f:
@@ -35,7 +36,7 @@ print("Saving the Data: ")
 # Define the date of processing and custom text
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-custom_text = "2000_sample_3_class"
+custom_text = "2000_sample_3_class_labels_check"
 
 # Create the directory path
 folder_name = f"{date_of_processing}-{custom_text}"
@@ -44,6 +45,8 @@ full_path = os.path.join(base_path, folder_name)
 
 # Ensure the directory exists
 os.makedirs(full_path, exist_ok=True)
+
+shutil.copy(folder_labels, full_path)
 
 # Define the full path for the processed data file
 processed_data_path = os.path.join(full_path, 'processed_data.h5')
