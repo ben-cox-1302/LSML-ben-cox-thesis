@@ -26,10 +26,28 @@ logging.getLogger('matplotlib.font_manager').disabled = True
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
+
+def read_label_mapping(file_path):
+    """
+    Reads a file containing label mappings in the format 'LabelName: Index' and returns a dictionary mapping indices to labels.
+
+    Args:
+        file_path: Path to the text file containing label mappings.
+
+    Returns:
+        dict: A dictionary mapping from indices (as integers) to label names.
+    """
+    label_mapping = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            name, idx = line.strip().split(':')
+            label_mapping[int(idx)] = name.strip()
+    return label_mapping
+
 def create_confusion_matrix_comparison(model, file_path, train_prefix, test_prefix, model_type, is_multiclass=False):
     """
     Generates confusion matrices for both training and testing datasets from an HDF5 file,
-    showing performance visualization using predictions made in batches.
+    showing performance visualization using predictions made in batches and labeling axes using labels from a specified file.
 
     Args:
         model: The trained model to use for predictions.
@@ -39,13 +57,19 @@ def create_confusion_matrix_comparison(model, file_path, train_prefix, test_pref
         model_type: A string label to describe the model (used in file naming).
         is_multiclass: Boolean indicating if the model handles multiclass classification.
     """
+    # Construct the path to the label file
+    label_file = os.path.join(os.path.dirname(file_path), 'folder_labels.txt')
+
+    # Read label mappings from file
+    labels_dict = read_label_mapping(label_file)
+
     # Create figure for plotting confusion matrices
     fig = plt.figure(figsize=[10, 15])
 
     # Training set visualization
     ax = fig.add_subplot(2, 1, 1)
     pred_train, indexes_train, gt_idx_train = deep_learning_helperFuncs.predict_in_batches(model, file_path, train_prefix, batch_size=32, is_multiclass=is_multiclass)
-    labels = np.unique(gt_idx_train)
+    labels = [labels_dict[idx] for idx in np.unique(gt_idx_train)]
     confusion_mtx_train = confusion_matrix(gt_idx_train, indexes_train)
     sns.heatmap(confusion_mtx_train, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
     ax.set_title('Training Set Performance: {:.2f}'.format(accuracy_score(gt_idx_train, indexes_train)))
@@ -55,7 +79,7 @@ def create_confusion_matrix_comparison(model, file_path, train_prefix, test_pref
     # Test set visualization
     ax = fig.add_subplot(2, 1, 2)
     pred_test, indexes_test, gt_idx_test = deep_learning_helperFuncs.predict_in_batches(model, file_path, test_prefix, batch_size=32, is_multiclass=is_multiclass)
-    labels = np.unique(gt_idx_test)
+    labels = [labels_dict[idx] for idx in np.unique(gt_idx_test)]
     confusion_mtx_test = confusion_matrix(gt_idx_test, indexes_test)
     sns.heatmap(confusion_mtx_test, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
     ax.set_title('Testing Set Performance: {:.2f}'.format(accuracy_score(gt_idx_test, indexes_test)))

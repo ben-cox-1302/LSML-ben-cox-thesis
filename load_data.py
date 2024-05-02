@@ -9,8 +9,17 @@ import evaluation_functions
 import matplotlib.pyplot as plt
 import shutil
 
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/x_y_processed_2000_20240501-141742/final_data.h5'
-folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/x_y_processed_2000_20240501-141742/folder_labels.txt'
+# Data being imported
+data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240502-181643/final_data.h5'
+folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240502-181643/folder_labels.txt'
+
+# Data being exported
+# Define the date of processing and custom text
+date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
+custom_text = "2000_sample_9_class"
+folder_name = f"{date_of_processing}-{custom_text}"
+base_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/'
+full_path = os.path.join(base_path, folder_name)
 
 print("Loading in the data: ")
 with h5py.File(data_to_use, 'r') as h5f:
@@ -18,8 +27,36 @@ with h5py.File(data_to_use, 'r') as h5f:
     Y = h5f['Y'][:]
 
 print("Splitting the data: ")
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42, stratify=Y)
-X_train, X_val, Y_train, Y_val = train_test_split(X_train, Y_train, test_size=0.1, random_state=42, stratify=Y_train)
+indices = np.arange(X.shape[0])
+np.random.seed(42)  # For reproducibility
+np.random.shuffle(indices)
+
+# Shuffled data
+X_shuffled = X[indices]
+Y_shuffled = Y[indices]
+
+# Define the proportions
+test_size = 0.2
+val_size = 0.1
+
+# Calculate the split indices
+test_split_index = int(X.shape[0] * test_size)
+val_split_index = int(X.shape[0] * (test_size + val_size))
+
+# Split the data
+X_test = X_shuffled[:test_split_index]
+Y_test = Y_shuffled[:test_split_index]
+
+X_val = X_shuffled[test_split_index:val_split_index]
+Y_val = Y_shuffled[test_split_index:val_split_index]
+
+X_train = X_shuffled[val_split_index:]
+Y_train = Y_shuffled[val_split_index:]
+
+print("Shapes of the datasets:")
+print("Train:", X_train.shape, Y_train.shape)
+print("Validation:", X_val.shape, Y_val.shape)
+print("Test:", X_test.shape, Y_test.shape)
 
 print("Processing Data: ")
 num_classes = len(np.unique(Y_train))
@@ -33,23 +70,13 @@ X_test = np.expand_dims(X_test, axis=-1)
 
 print("Saving the Data: ")
 
-# Define the date of processing and custom text
-date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-custom_text = "2000_sample_3_class_labels_check"
-
-# Create the directory path
-folder_name = f"{date_of_processing}-{custom_text}"
-base_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_processed/'
-full_path = os.path.join(base_path, folder_name)
-
 # Ensure the directory exists
 os.makedirs(full_path, exist_ok=True)
 
 shutil.copy(folder_labels, full_path)
 
 # Define the full path for the processed data file
-processed_data_path = os.path.join(full_path, 'processed_data.h5')
+processed_data_path = os.path.join(full_path, 'split_processed_data.h5')
 
 # Define compression options
 compression_alg = 'lzf'  # Faster, less effective compression
