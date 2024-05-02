@@ -24,7 +24,7 @@ epochs = 10
 use_generator = False
 
 # Specify the directory where your .npy files are saved
-data_to_use = '/work/laserml/Data/Ben_Cox/Data/Data_Staging/data_processed/20240501_143050-2000_sample_3_class/processed_data.h5'
+data_to_use = '/work/laserml/Data/Ben_Cox/Data_Staging/data_processed/20240501_143050-2000_sample_3_class/processed_data.h5'
 
 inputs = keras.Input(shape=(253, 1024, 1), name='img')
 
