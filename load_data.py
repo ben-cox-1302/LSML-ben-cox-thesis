@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 import shutil
 
 # Data being imported
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240502-181643/final_data.h5'
-folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240502-181643/folder_labels.txt'
+data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240503-091210/final_data.h5'
+folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240503-091210/folder_labels.txt'
 
 # Data being exported
 # Define the date of processing and custom text
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
-custom_text = "2000_sample_9_class"
+custom_text = "2000_sample_9_class_new"
 folder_name = f"{date_of_processing}-{custom_text}"
 base_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/'
 full_path = os.path.join(base_path, folder_name)

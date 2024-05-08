@@ -7,13 +7,30 @@ import matplotlib.pyplot as plt
 import evaluation_functions
 import deep_learning_helperFuncs
 import h5py
+import zipfile
+import shutil
 
 batch_size = 32
 epochs = 15
 use_generator = True
 
-# Specify the directory where your .npy files are saved
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/20240502_191312-2000_sample_9_class/split_processed_data.h5'
+# Path for the zip file and the target directory for extracted contents
+zip_file_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/20240503_092834-2000_sample_9_class_new.zip'
+extract_dir = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
+data_file_name = 'split_processed_data.h5'
+
+# Assume zip file contents are within a directory named after the zip file (without '.zip')
+base_name = os.path.basename(zip_file_path)
+zip_dir_name = base_name[:-4]  # Remove '.zip'
+data_file_path = os.path.join(extract_dir, zip_dir_name, data_file_name)
+
+# Check if the data file already exists unzipped
+if not os.path.exists(data_file_path):
+    # Unzip the file if the data does not exist
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_dir)
+
+data_to_use = data_file_path
 
 inputs = keras.Input(shape=(253, 1024, 1), name='img')
 
@@ -120,3 +137,5 @@ if use_generator == True:
     evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', '4_class', is_multiclass=True)
 else:
     evaluation_functions.eval_model_2(model_vgg, X_train, Y_train, X_test, Y_test, '4_class')
+
+shutil.rmtree(extract_dir)
