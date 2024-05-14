@@ -131,18 +131,29 @@ def display_images_with_predictions(x_data, predictions, true_labels, model, num
     plt.show()
 
 
-def show_samples(X, Y, samples_per_class=2):
+def show_samples(X, Y, class_labels, samples_per_class=2):
     """
-    Shows a specified number of samples for each class as an image.
+    Shows a specified number of samples for each class as an image with class labels as titles.
     Parameters:
         X : numpy.ndarray - Array of image data.
         Y : numpy.ndarray - One-hot encoded class labels.
+        class_labels : list of str - Names of the classes corresponding to columns in Y.
         samples_per_class : int - Number of samples to show per class (default is 2).
     """
     if Y.ndim != 2 or Y.shape[1] <= 1:
         raise ValueError("Y must be a one-hot encoded 2D array with more than one class.")
+    if len(class_labels) != Y.shape[1]:
+        raise ValueError("Length of class_labels must match the number of columns in Y.")
+
     num_classes = Y.shape[1]
-    plt.figure(figsize=(10, num_classes * 5))
+    total_samples = num_classes * samples_per_class
+
+    # Calculate the grid size to as close to a square as possible, favoring more rows
+    rows = int(np.ceil(np.sqrt(total_samples)))
+    cols = int(np.ceil(total_samples / rows))
+
+    # Adjusting figure size dynamically with a higher height ratio
+    plt.figure(figsize=(3 * cols, 2 * rows))  # Adjusting the height to be 1.5 times the width
     for i in range(num_classes):
         class_indices = np.where(Y[:, i] == 1)[0]
         if len(class_indices) < samples_per_class:
@@ -151,13 +162,13 @@ def show_samples(X, Y, samples_per_class=2):
             samples = np.random.choice(class_indices, samples_per_class, replace=False)
 
         for j, sample in enumerate(samples):
-            plt.subplot(num_classes, samples_per_class, i * samples_per_class + j + 1)
-            plt.imshow(X[sample].squeeze(), cmap=None if X[sample].shape[-1] == 3 else 'gray')
-            plt.title(f'Class {i}')
+            index = i * samples_per_class + j
+            plt.subplot(rows, cols, index + 1)
+            plt.imshow(X[sample].squeeze(), cmap=None if X[sample].shape[-1] == 3 else 'gray', aspect='auto')  # 'auto' stretches the image to fill the subplot
+            plt.title(class_labels[i])
             plt.axis('off')
     plt.tight_layout()
-    plt.show()
-
+    plt.savefig(os.path.join('plots', 'samples_example.png'))
 
 def eval_model_2(model, train, train_y, test, test_y, model_type):
     fig = plt.figure(figsize=[10, 15])

@@ -75,7 +75,6 @@ def predict_in_batches(model, file_path, dataset_prefix, batch_size=32, is_multi
     return predictions, predicted_labels, true_labels
 
 
-
 def generate_data(x, y, batch_size=32, augment=False):
     """
     Loads data into a tf.data.Dataset and prepares it for training by

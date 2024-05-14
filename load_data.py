@@ -9,8 +9,10 @@ import evaluation_functions
 import matplotlib.pyplot as plt
 import shutil
 
+import loading_functions
+
 # Data being imported
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240503-091210/final_data.h5'
+data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
 folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240503-091210/folder_labels.txt'
 
 # Data being exported
@@ -26,107 +28,150 @@ with h5py.File(data_to_use, 'r') as h5f:
     X = h5f['X'][:]
     Y = h5f['Y'][:]
 
-print("Splitting the data: ")
-indices = np.arange(X.shape[0])
-np.random.seed(42)  # For reproducibility
-np.random.shuffle(indices)
+    print(X.shape)
+    print(Y.shape)
 
-# Shuffled data
-X_shuffled = X[indices]
-Y_shuffled = Y[indices]
+    print("Splitting the data: ")
+    indices = np.arange(X.shape[0])
+    np.random.seed(42)  # For reproducibility
+    np.random.shuffle(indices)
 
-# Define the proportions
-test_size = 0.2
-val_size = 0.1
+    # Shuffled data
+    X_shuffled = X[indices]
+    Y_shuffled = Y[indices]
 
-# Calculate the split indices
-test_split_index = int(X.shape[0] * test_size)
-val_split_index = int(X.shape[0] * (test_size + val_size))
+    # Define the proportions
+    test_size = 0.2
+    val_size = 0.1
 
-# Split the data
-X_test = X_shuffled[:test_split_index]
-Y_test = Y_shuffled[:test_split_index]
+    # Calculate the split indices
+    test_split_index = int(X.shape[0] * test_size)
+    val_split_index = int(X.shape[0] * (test_size + val_size))
 
-X_val = X_shuffled[test_split_index:val_split_index]
-Y_val = Y_shuffled[test_split_index:val_split_index]
+    # Split the data
+    X_test = X_shuffled[:test_split_index]
+    Y_test = Y_shuffled[:test_split_index]
 
-X_train = X_shuffled[val_split_index:]
-Y_train = Y_shuffled[val_split_index:]
+    X_val = X_shuffled[test_split_index:val_split_index]
+    Y_val = Y_shuffled[test_split_index:val_split_index]
 
-print("Shapes of the datasets:")
-print("Train:", X_train.shape, Y_train.shape)
-print("Validation:", X_val.shape, Y_val.shape)
-print("Test:", X_test.shape, Y_test.shape)
+    X_train = X_shuffled[val_split_index:]
+    Y_train = Y_shuffled[val_split_index:]
 
-print("Processing Data: ")
-num_classes = len(np.unique(Y_train))
-Y_train = to_categorical(Y_train, num_classes)
-Y_val = to_categorical(Y_val, num_classes)
-Y_test = to_categorical(Y_test, num_classes)
+    # Split the data into train and remaining (temporarily hold validation and test together)
+    # X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
 
-X_train = np.expand_dims(X_train, axis=-1)
-X_val = np.expand_dims(X_val, axis=-1)
-X_test = np.expand_dims(X_test, axis=-1)
+    # Split the remaining data into validation and test sets
+    # X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=(2/3), random_state=42, stratify=Y_temp)
 
-print("Saving the Data: ")
+    # Optional: Print the sizes to verify the splits
+    print(f"Train set size: {len(X_train)}")
+    print(f"Validation set size: {len(X_val)}")
+    print(f"Test set size: {len(X_test)}")
 
-# Ensure the directory exists
-os.makedirs(full_path, exist_ok=True)
+    print("Processing Data: ")
+    num_classes = len(np.unique(Y_train))
+    Y_train = to_categorical(Y_train, num_classes)
+    Y_val = to_categorical(Y_val, num_classes)
+    Y_test = to_categorical(Y_test, num_classes)
 
-shutil.copy(folder_labels, full_path)
+    X_train = np.expand_dims(X_train, axis=-1)
+    X_val = np.expand_dims(X_val, axis=-1)
+    X_test = np.expand_dims(X_test, axis=-1)
 
-# Define the full path for the processed data file
-processed_data_path = os.path.join(full_path, 'split_processed_data.h5')
+    print("Saving the Data: ")
 
-# Define compression options
-compression_alg = 'lzf'  # Faster, less effective compression
-compression_level = 4    # Lower compression level if still using gzip
+    # Ensure the directory exists
+    os.makedirs(full_path, exist_ok=True)
 
-# Save the processed data with new compression settings
-with h5py.File(processed_data_path, 'w') as h5f:
-    h5f.create_dataset('X_train', data=X_train, compression=compression_alg)
-    h5f.create_dataset('X_val', data=X_val, compression=compression_alg)
-    h5f.create_dataset('X_test', data=X_test, compression=compression_alg)
-    h5f.create_dataset('Y_train', data=Y_train, compression=compression_alg)
-    h5f.create_dataset('Y_val', data=Y_val, compression=compression_alg)
-    h5f.create_dataset('Y_test', data=Y_test, compression=compression_alg)
+    shutil.copy(folder_labels, full_path)
 
-print("Data saved successfully in:", processed_data_path)
+    # Define the full path for the processed data file
+    processed_data_path = os.path.join(full_path, 'split_processed_data.h5')
 
-# Set up the figure and subplots
-fig, axs = plt.subplots(3, 1, figsize=[15, 30])  # 3 rows, 1 column, larger figure size
+    # Define compression options
+    compression_alg = 'lzf'  # Faster, less effective compression
+    compression_level = 4    # Lower compression level if still using gzip
 
-# Training set histogram
-axs[0].hist(np.argmax(Y_train, axis=1), bins=np.arange(Y_train.shape[1]+1)-0.5, rwidth=0.7)
-axs[0].set_title('Class Imbalance Training Data-Set', fontsize="20")
-axs[0].set_xlabel('Classifiers', fontsize="16")
-axs[0].set_ylabel('Occurrences in the Training Set', fontsize="16")
-axs[0].set_xticks(np.arange(Y_train.shape[1]))
+    # Save the processed data with new compression settings
+    with h5py.File(processed_data_path, 'w') as h5f:
+        h5f.create_dataset('X_train', data=X_train, compression=compression_alg)
+        h5f.create_dataset('X_val', data=X_val, compression=compression_alg)
+        h5f.create_dataset('X_test', data=X_test, compression=compression_alg)
+        h5f.create_dataset('Y_train', data=Y_train, compression=compression_alg)
+        h5f.create_dataset('Y_val', data=Y_val, compression=compression_alg)
+        h5f.create_dataset('Y_test', data=Y_test, compression=compression_alg)
 
-# Validation set histogram
-axs[1].hist(np.argmax(Y_val, axis=1), bins=np.arange(Y_val.shape[1]+1)-0.5, rwidth=0.7)
-axs[1].set_title('Class Imbalance Validation Data-Set', fontsize="20")
-axs[1].set_xlabel('Classifiers', fontsize="16")
-axs[1].set_ylabel('Occurrences in the Validation Set', fontsize="16")
-axs[1].set_xticks(np.arange(Y_val.shape[1]))
+    print("Data saved successfully in:", processed_data_path)
 
-# Testing set histogram
-axs[2].hist(np.argmax(Y_test, axis=1), bins=np.arange(Y_test.shape[1]+1)-0.5, rwidth=0.7)
-axs[2].set_title('Class Imbalance Testing Data-Set', fontsize="20")
-axs[2].set_xlabel('Classifiers', fontsize="16")
-axs[2].set_ylabel('Occurrences in the Testing Set', fontsize="16")
-axs[2].set_xticks(np.arange(Y_test.shape[1]))
+    # Set up the figure and subplots
+    fig, axs = plt.subplots(3, 1, figsize=[15, 30])  # 3 rows, 1 column, larger figure size
 
-# Improve layout to prevent overlap
-plt.tight_layout()
+    # Training set histogram
+    axs[0].hist(np.argmax(Y_train, axis=1), bins=np.arange(Y_train.shape[1]+1)-0.5, rwidth=0.7)
+    axs[0].set_title('Class Imbalance Training Data-Set', fontsize="20")
+    axs[0].set_xlabel('Classifiers', fontsize="16")
+    axs[0].set_ylabel('Occurrences in the Training Set', fontsize="16")
+    axs[0].set_xticks(np.arange(Y_train.shape[1]))
 
-plt.show()
+    # Validation set histogram
+    axs[1].hist(np.argmax(Y_val, axis=1), bins=np.arange(Y_val.shape[1]+1)-0.5, rwidth=0.7)
+    axs[1].set_title('Class Imbalance Validation Data-Set', fontsize="20")
+    axs[1].set_xlabel('Classifiers', fontsize="16")
+    axs[1].set_ylabel('Occurrences in the Validation Set', fontsize="16")
+    axs[1].set_xticks(np.arange(Y_val.shape[1]))
 
-plt.close()
+    # Testing set histogram
+    axs[2].hist(np.argmax(Y_test, axis=1), bins=np.arange(Y_test.shape[1]+1)-0.5, rwidth=0.7)
+    axs[2].set_title('Class Imbalance Testing Data-Set', fontsize="20")
+    axs[2].set_xlabel('Classifiers', fontsize="16")
+    axs[2].set_ylabel('Occurrences in the Testing Set', fontsize="16")
+    axs[2].set_xticks(np.arange(Y_test.shape[1]))
 
-evaluation_functions.show_samples(X_train, Y_train)
+    # Improve layout to prevent overlap
+    plt.tight_layout()
 
-# Clean up
-del X, Y, X_train, X_val, X_test, Y_train, Y_val, Y_test
-gc.collect()
+    plt.show()
 
+    plt.close()
+
+    class_labels = ['Barium', 'Bi-Carb', 'Citric Acid', 'Deep Heat', 'Erythritol', 'Flour', 'Lithium Niobate',
+                    'Paracetamol', 'Water']
+
+    evaluation_functions.show_samples(X_train, Y_train, class_labels, samples_per_class=1)
+
+    # Clean up
+    del X, Y, X_train, X_val, X_test, Y_train, Y_val, Y_test
+    gc.collect()
+
+    #print("Loading in the data: ")
+    #with h5py.File(data_to_use, 'r') as h5f:
+    #    X = h5f['X'][:]
+    #    Y = h5f['Y'][:]
+    #
+    #print("Splitting the data: ")
+    #indices = np.arange(X.shape[0])
+    #np.random.seed(42)  # For reproducibility
+    #np.random.shuffle(indices)
+    #
+    ## Shuffled data
+    #X_shuffled = X[indices]
+    #Y_shuffled = Y[indices]
+    #
+    ## Define the proportions
+    #test_size = 0.2
+    #val_size = 0.1
+    #
+    ## Calculate the split indices
+    #test_split_index = int(X.shape[0] * test_size)
+    #val_split_index = int(X.shape[0] * (test_size + val_size))
+    #
+    ## Split the data
+    #X_test = X_shuffled[:test_split_index]
+    #Y_test = Y_shuffled[:test_split_index]
+    #
+    #X_val = X_shuffled[test_split_index:val_split_index]
+    #Y_val = Y_shuffled[test_split_index:val_split_index]
+    #
+    #X_train = X_shuffled[val_split_index:]
+    #Y_train = Y_shuffled[val_split_index:]

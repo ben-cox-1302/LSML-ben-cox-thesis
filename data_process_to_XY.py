@@ -6,26 +6,8 @@ from datetime import datetime
 import zipfile
 import matplotlib.pyplot as plt
 import h5py
+import loading_functions
 
-def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=False):
-    zip_files = glob.glob(os.path.join(folder_path, '*.zip'))
-    if not zip_files:
-        raise FileNotFoundError("No zip files found in the specified directory.")
-    all_data_matrices = []
-    for zip_file_path in zip_files:
-        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-            zip_ref.extractall(folder_path)
-        extracted_folder = os.path.join(folder_path, os.path.splitext(os.path.basename(zip_file_path))[0])
-        pattern = os.path.join(extracted_folder, '*.csv')
-        all_csv_files = glob.glob(pattern)
-        if max_samples is not None:
-            all_csv_files = all_csv_files[:max_samples]  # Limit the number of CSV files processed
-        csv_files = [file for file in all_csv_files if "Wavelengths" not in os.path.basename(file)]
-        skiprows = (lambda x: x % 2 == 1) if skip_alternate_rows else None
-        for file_path in csv_files:
-            df = pd.read_csv(file_path, header=None, skiprows=skiprows, dtype=np.float32)
-            all_data_matrices.append(df.values)
-    return np.stack(all_data_matrices) if all_data_matrices else np.array([])
 
 # User can specify the maximum number of samples to load from each folder
 max_samples_per_folder = 2000  # Set this to None to load all samples
@@ -47,7 +29,7 @@ with open(labels_file_path, 'w') as f:
     for folder in folders:
         folder_path = os.path.join(directory, folder)
         print("Processing folder:", folder)
-        data_X = load_csv_as_matrices(folder_path, max_samples=max_samples_per_folder)
+        data_X = loading_functions.load_csv_as_matrices(folder_path, max_samples=(max_samples_per_folder+1))
         data_Y = np.full(len(data_X), i, dtype=np.uint8)
         if data_X.size > 0:
             label_data_X_path = os.path.join(save_path, f'data_X_label_{i}.npy')
@@ -61,6 +43,7 @@ with open(labels_file_path, 'w') as f:
 
 total_size_X = sum(sizes_X)
 total_size_Y = sum(sizes_Y)
+
 dtype_X = np.float32  # Assuming data_X uses float32
 dtype_Y = np.uint8    # Assuming data_Y uses uint8
 
