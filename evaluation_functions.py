@@ -168,7 +168,7 @@ def show_samples(X, Y, class_labels, samples_per_class=2):
             plt.title(class_labels[i])
             plt.axis('off')
     plt.tight_layout()
-    plt.savefig(os.path.join('plots', 'samples_example.png'))
+    plt.savefig('samples_example.png')
 
 def eval_model_2(model, train, train_y, test, test_y, model_type):
     fig = plt.figure(figsize=[10, 15])
