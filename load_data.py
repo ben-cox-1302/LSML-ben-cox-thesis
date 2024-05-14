@@ -31,38 +31,38 @@ with h5py.File(data_to_use, 'r') as h5f:
     print(X.shape)
     print(Y.shape)
 
-    print("Splitting the data: ")
-    indices = np.arange(X.shape[0])
-    np.random.seed(42)  # For reproducibility
-    np.random.shuffle(indices)
+    #print("Splitting the data: ")
+    #indices = np.arange(X.shape[0])
+    #np.random.seed(42)  # For reproducibility
+    #np.random.shuffle(indices)
 
-    # Shuffled data
-    X_shuffled = X[indices]
-    Y_shuffled = Y[indices]
+    ## Shuffled data
+    #X_shuffled = X[indices]
+    #Y_shuffled = Y[indices]
 
-    # Define the proportions
-    test_size = 0.2
-    val_size = 0.1
+    ## Define the proportions
+    #test_size = 0.2
+    #val_size = 0.1
 
-    # Calculate the split indices
-    test_split_index = int(X.shape[0] * test_size)
-    val_split_index = int(X.shape[0] * (test_size + val_size))
+    ## Calculate the split indices
+    #test_split_index = int(X.shape[0] * test_size)
+    #val_split_index = int(X.shape[0] * (test_size + val_size))
 
-    # Split the data
-    X_test = X_shuffled[:test_split_index]
-    Y_test = Y_shuffled[:test_split_index]
+    ## Split the data
+    #X_test = X_shuffled[:test_split_index]
+    #Y_test = Y_shuffled[:test_split_index]
 
-    X_val = X_shuffled[test_split_index:val_split_index]
-    Y_val = Y_shuffled[test_split_index:val_split_index]
+    #X_val = X_shuffled[test_split_index:val_split_index]
+    #Y_val = Y_shuffled[test_split_index:val_split_index]
 
-    X_train = X_shuffled[val_split_index:]
-    Y_train = Y_shuffled[val_split_index:]
+    #X_train = X_shuffled[val_split_index:]
+    #Y_train = Y_shuffled[val_split_index:]
 
     # Split the data into train and remaining (temporarily hold validation and test together)
-    # X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
+    X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
 
     # Split the remaining data into validation and test sets
-    # X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=(2/3), random_state=42, stratify=Y_temp)
+    X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=(2/3), random_state=42, stratify=Y_temp)
 
     # Optional: Print the sizes to verify the splits
     print(f"Train set size: {len(X_train)}")
@@ -131,7 +131,7 @@ with h5py.File(data_to_use, 'r') as h5f:
     # Improve layout to prevent overlap
     plt.tight_layout()
 
-    plt.show()
+    plt.savefig('class_balance.png')
 
     plt.close()
 
