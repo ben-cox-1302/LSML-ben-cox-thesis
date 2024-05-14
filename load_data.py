@@ -12,8 +12,8 @@ import shutil
 import loading_functions
 
 # Data being imported
-data_to_use = '/work/laserml/Data/Ben_Cox/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
-folder_labels = '/work/laserml/Data/Ben_Cox/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
+data_to_use = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
+folder_labels = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
 
 # Data being exported
 # Define the date of processing and custom text
