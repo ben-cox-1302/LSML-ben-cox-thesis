@@ -20,7 +20,7 @@ folder_labels = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
 custom_text = "2000_sample_9_class_new"
 folder_name = f"{date_of_processing}-{custom_text}"
-base_path = '/work/laserml/Data/Ben_Cox/data_xy_split/'
+base_path = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy_split/'
 full_path = os.path.join(base_path, folder_name)
 
 print("Loading in the data: ")
