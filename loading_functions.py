@@ -17,13 +17,20 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
         extracted_folder = os.path.join(folder_path, os.path.splitext(os.path.basename(zip_file_path))[0])
         pattern = os.path.join(extracted_folder, '*.csv')
         all_csv_files = glob.glob(pattern)
-        if max_samples is not None:
-            all_csv_files = all_csv_files[:max_samples]  # Limit the number of CSV files processed
+
         csv_files = [file for file in all_csv_files if "Wavelengths" not in os.path.basename(file)]
+
+        if max_samples is not None:
+            csv_files = csv_files[:max_samples]
+
         skiprows = (lambda x: x % 2 == 1) if skip_alternate_rows else None
         for file_path in csv_files:
-            df = pd.read_csv(file_path, header=None, skiprows=skiprows, dtype=np.float32)
-            all_data_matrices.append(df.values)
+            try:
+                df = pd.read_csv(file_path, header=None, skiprows=skiprows, dtype=np.float32)
+                all_data_matrices.append(df.values)
+            except Exception as e:
+                print("Failed to read:", file_path, "Error:", e)
+    print("Final count of data matrices:", len(all_data_matrices))
     return np.stack(all_data_matrices) if all_data_matrices else np.array([])
 
 

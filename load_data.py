@@ -12,15 +12,18 @@ import shutil
 import loading_functions
 
 # Data being imported
-data_to_use = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
-folder_labels = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
+data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
+folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
+
+# data_to_use = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
+# folder_labels = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
 
 # Data being exported
 # Define the date of processing and custom text
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
-custom_text = "2000_sample_9_class_new"
+custom_text = "2000_sample_report_multiclass"
 folder_name = f"{date_of_processing}-{custom_text}"
-base_path = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy_split/'
+base_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/'
 full_path = os.path.join(base_path, folder_name)
 
 print("Loading in the data: ")
@@ -105,27 +108,27 @@ with h5py.File(data_to_use, 'r') as h5f:
     print("Data saved successfully in:", processed_data_path)
 
     # Set up the figure and subplots
-    fig, axs = plt.subplots(3, 1, figsize=[15, 30])  # 3 rows, 1 column, larger figure size
+    fig, axs = plt.subplots(1, 3, figsize=[18, 7])  # 3 rows, 1 column, larger figure size
 
     # Training set histogram
     axs[0].hist(np.argmax(Y_train, axis=1), bins=np.arange(Y_train.shape[1]+1)-0.5, rwidth=0.7)
-    axs[0].set_title('Class Imbalance Training Data-Set', fontsize="20")
+    axs[0].set_title('Training Data-Set', fontsize="20")
     axs[0].set_xlabel('Classifiers', fontsize="16")
-    axs[0].set_ylabel('Occurrences in the Training Set', fontsize="16")
+    axs[0].set_ylabel('Occurrences', fontsize="16")
     axs[0].set_xticks(np.arange(Y_train.shape[1]))
 
     # Validation set histogram
     axs[1].hist(np.argmax(Y_val, axis=1), bins=np.arange(Y_val.shape[1]+1)-0.5, rwidth=0.7)
-    axs[1].set_title('Class Imbalance Validation Data-Set', fontsize="20")
+    axs[1].set_title('Validation Data-Set', fontsize="20")
     axs[1].set_xlabel('Classifiers', fontsize="16")
-    axs[1].set_ylabel('Occurrences in the Validation Set', fontsize="16")
+    axs[1].set_ylabel('Occurrences', fontsize="16")
     axs[1].set_xticks(np.arange(Y_val.shape[1]))
 
     # Testing set histogram
     axs[2].hist(np.argmax(Y_test, axis=1), bins=np.arange(Y_test.shape[1]+1)-0.5, rwidth=0.7)
-    axs[2].set_title('Class Imbalance Testing Data-Set', fontsize="20")
+    axs[2].set_title('Testing Data-Set', fontsize="20")
     axs[2].set_xlabel('Classifiers', fontsize="16")
-    axs[2].set_ylabel('Occurrences in the Testing Set', fontsize="16")
+    axs[2].set_ylabel('Occurrences', fontsize="16")
     axs[2].set_xticks(np.arange(Y_test.shape[1]))
 
     # Improve layout to prevent overlap
@@ -135,43 +138,10 @@ with h5py.File(data_to_use, 'r') as h5f:
 
     plt.close()
 
-    class_labels = ['Barium', 'Bi-Carb', 'Citric Acid', 'Deep Heat', 'Erythritol', 'Flour', 'Lithium Niobate',
-                    'Paracetamol', 'Water']
+    # class_labels = ['Lithium Niobate', 'Water']
 
-    evaluation_functions.show_samples(X_train, Y_train, class_labels, samples_per_class=1)
+    # evaluation_functions.show_samples(X_train, Y_train, class_labels, samples_per_class=1)
 
     # Clean up
     del X, Y, X_train, X_val, X_test, Y_train, Y_val, Y_test
     gc.collect()
-
-    #print("Loading in the data: ")
-    #with h5py.File(data_to_use, 'r') as h5f:
-    #    X = h5f['X'][:]
-    #    Y = h5f['Y'][:]
-    #
-    #print("Splitting the data: ")
-    #indices = np.arange(X.shape[0])
-    #np.random.seed(42)  # For reproducibility
-    #np.random.shuffle(indices)
-    #
-    ## Shuffled data
-    #X_shuffled = X[indices]
-    #Y_shuffled = Y[indices]
-    #
-    ## Define the proportions
-    #test_size = 0.2
-    #val_size = 0.1
-    #
-    ## Calculate the split indices
-    #test_split_index = int(X.shape[0] * test_size)
-    #val_split_index = int(X.shape[0] * (test_size + val_size))
-    #
-    ## Split the data
-    #X_test = X_shuffled[:test_split_index]
-    #Y_test = Y_shuffled[:test_split_index]
-    #
-    #X_val = X_shuffled[test_split_index:val_split_index]
-    #Y_val = Y_shuffled[test_split_index:val_split_index]
-    #
-    #X_train = X_shuffled[val_split_index:]
-    #Y_train = Y_shuffled[val_split_index:]

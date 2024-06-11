@@ -64,27 +64,34 @@ def create_confusion_matrix_comparison(model, file_path, train_prefix, test_pref
     labels_dict = read_label_mapping(label_file)
 
     # Create figure for plotting confusion matrices
-    fig = plt.figure(figsize=[10, 15])
+    fig = plt.figure(figsize=[26, 10])
 
     # Training set visualization
-    ax = fig.add_subplot(2, 1, 1)
+    ax = fig.add_subplot(1, 2, 1)
+    print("Training Dataset: ")
     pred_train, indexes_train, gt_idx_train = deep_learning_helperFuncs.predict_in_batches(model, file_path, train_prefix, batch_size=32, is_multiclass=is_multiclass)
     labels = [labels_dict[idx] for idx in np.unique(gt_idx_train)]
     confusion_mtx_train = confusion_matrix(gt_idx_train, indexes_train)
     sns.heatmap(confusion_mtx_train, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
     ax.set_title('Training Set Performance: {:.2f}'.format(accuracy_score(gt_idx_train, indexes_train)))
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
 
     # Test set visualization
-    ax = fig.add_subplot(2, 1, 2)
+    ax = fig.add_subplot(1, 2, 2)
+    print("Testing Dataset: ")
     pred_test, indexes_test, gt_idx_test = deep_learning_helperFuncs.predict_in_batches(model, file_path, test_prefix, batch_size=32, is_multiclass=is_multiclass)
     labels = [labels_dict[idx] for idx in np.unique(gt_idx_test)]
     confusion_mtx_test = confusion_matrix(gt_idx_test, indexes_test)
     sns.heatmap(confusion_mtx_test, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
+    # Rotate x-axis labels to fit them within the figure
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
     ax.set_title('Testing Set Performance: {:.2f}'.format(accuracy_score(gt_idx_test, indexes_test)))
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
+
+    plt.tight_layout()
 
     # Create the folder if it doesn't already exist
     if not os.path.exists('plots'):
@@ -168,7 +175,7 @@ def show_samples(X, Y, class_labels, samples_per_class=2):
             plt.title(class_labels[i])
             plt.axis('off')
     plt.tight_layout()
-    plt.savefig('samples_example.png')
+    plt.savefig('plots/samples_example.png')
 
 def eval_model_2(model, train, train_y, test, test_y, model_type):
     fig = plt.figure(figsize=[10, 15])

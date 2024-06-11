@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 import logging
 from tensorflow.keras import backend as K
 import h5py
+import time
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 
@@ -39,6 +40,7 @@ def predict_in_batches(model, file_path, dataset_prefix, batch_size=32, is_multi
     """
     predictions = []
     true_labels = []
+    total_time = 0
 
     # Open the HDF5 file and read batches directly
     with h5py.File(file_path, 'r') as h5f:
@@ -52,8 +54,13 @@ def predict_in_batches(model, file_path, dataset_prefix, batch_size=32, is_multi
             batch_X = X_data[i:end_i]
             batch_Y = Y_true[i:end_i]
 
-            # Make predictions on the batch
+            start_time = time.time()
             batch_predictions = model.predict(batch_X, verbose=0)
+            end_time = time.time()
+
+            batch_time = end_time - start_time
+            total_time += batch_time
+
             predictions.extend(batch_predictions)
             true_labels.extend(batch_Y)
 
@@ -71,9 +78,12 @@ def predict_in_batches(model, file_path, dataset_prefix, batch_size=32, is_multi
     # Print the classification report
     print(classification_report(true_labels, predicted_labels))
 
+    # Calculate and print the average time per sample
+    average_time_per_sample = total_time / num_samples
+    print(f"Average prediction time per sample: {average_time_per_sample:.6f} seconds")
+
     # Optionally, return the predictions and true labels for further analysis
     return predictions, predicted_labels, true_labels
-
 
 def generate_data(x, y, batch_size=32, augment=False):
     """

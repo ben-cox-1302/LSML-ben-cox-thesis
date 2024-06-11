@@ -3,9 +3,10 @@ import loading_functions
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import os
+from PIL import Image
 
 
-def simulate_accumulations(pulse_data, baseline=600):
+def simulate_accumulations(pulse_data):
     """
     Simulates the accumulating of the LightField software
     Parameters
@@ -18,6 +19,8 @@ def simulate_accumulations(pulse_data, baseline=600):
     The combined matrix representing the simulated accumulations
     """
 
+    baseline = 604
+
     # Remove the baseline from each pulse
     corrected_data = pulse_data - baseline
 
@@ -29,12 +32,19 @@ def simulate_accumulations(pulse_data, baseline=600):
     return acc_matrix_baseline_added
 
 
-def interactive_accumulation_plot(folder_path):
+
+def interactive_accumulation_plot(folder_path, chemical, accumulations=200, max_columns=None):
     # Load the data
-    pulse_data = loading_functions.load_csv_as_matrices(folder_path, skip_alternate_rows=False)
+    pulse_data = loading_functions.load_csv_as_matrices(folder_path, skip_alternate_rows=False, max_samples=accumulations)
+
+    # Load wavelength data
+    wavelengths = loading_functions.load_wavelength_csv_as_array(folder_path)
+    incident_wavelength = 355  # Assuming a constant for the incident wavelength
+    raman_shifts = calculate_raman_shift_array(wavelengths, incident_wavelength)
 
     # Pre-calculate all possible accumulations
     accumulations_data = [simulate_accumulations(pulse_data[:i]) for i in range(1, len(pulse_data) + 1)]
+    raman_1D_data = [np.mean(acc, axis=0) for acc in accumulations_data]  # Calculating 1D data from accumulations
 
     # Initial number of accumulations
     NR_ACCUM = 1
@@ -43,27 +53,50 @@ def interactive_accumulation_plot(folder_path):
     def update(val):
         nonlocal NR_ACCUM
         NR_ACCUM = int(slider.val)
-        accumulated_data = accumulations_data[NR_ACCUM - 1]  # Retrieve pre-calculated data
+        accumulated_data = accumulations_data[NR_ACCUM - 1]  # Retrieve pre-calculated 2D data
+        raman_1D = raman_1D_data[NR_ACCUM - 1]  # Retrieve pre-calculated 1D data
 
-        # Update the image data and adjust the display range
-        im.set_data(accumulated_data)
+        # Update the 2D image data and adjust the display range
+        im.set_data(accumulated_data[:, :max_columns])
         im.set_clim(accumulated_data.min(), accumulated_data.max())
 
-        ax.set_title(f"{NR_ACCUM} Accumulations Data for Lithium niobate")
+        # Update 1D plot data
+        line.set_ydata(raman_1D[:max_columns])
+        line.set_xdata(raman_shifts[:max_columns])
+        ax1.relim()  # Recalculate limits
+        ax1.autoscale_view()  # Auto-scale
+
+        ax.set_title(f"{NR_ACCUM} Accumulations Data for {chemical}", fontsize=20)  # Make title bigger
         fig.canvas.draw_idle()
 
-    # Set up the figure and the axis
-    fig, ax = plt.subplots()
-    plt.subplots_adjust(bottom=0.25)
+    # Set up the figure and the axis with specified dimensions
+    fig = plt.figure(figsize=(10, 12))  # Adjust figure height
+    ax = fig.add_subplot(211)
+    ax1 = fig.add_subplot(212)
 
-    # Display the initial data
+    # Display the initial 2D data
     accumulated_data = accumulations_data[NR_ACCUM - 1]
-    im = ax.imshow(accumulated_data, cmap='gray', vmin=accumulated_data.min(), vmax=accumulated_data.max())
-    ax.set_title(f"{NR_ACCUM} Accumulations Data for Lithium niobate")
+    im = ax.imshow(accumulated_data[:, :max_columns], cmap='gray', vmin=accumulated_data.min(), vmax=accumulated_data.max(), aspect='auto')
+    ax.set_title(f"{NR_ACCUM} Accumulations Data for {chemical}", fontsize=20)
 
-    # Add a slider
-    ax_slider = plt.axes([0.25, 0.1, 0.65, 0.03])
+    # Remove axis labels and ticks for 2D data
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Initial 1D plot
+    raman_1D = raman_1D_data[NR_ACCUM - 1]
+    line, = ax1.plot(raman_shifts[:max_columns], raman_1D[:max_columns], label=f"{NR_ACCUM} Accumulations")
+    ax1.set_xlabel('Raman Shift (cm$^{-1}$)', fontsize=12)
+    ax1.set_ylabel('Raman Intensity (Counts)', fontsize=12)
+
+    # Adjust subplot sizes
+    ax.set_position([0.125, 0.55, 0.775, 0.35])  # Adjusted position for 2D plot
+    ax1.set_position([0.125, 0.25, 0.775, 0.25])  # Adjusted position for 1D plot
+
+    # Add a slider, positioned closer to the lower plot
+    ax_slider = plt.axes([0.125, 0.1, 0.75, 0.05])  # Reduced vertical position
     slider = Slider(ax=ax_slider, label='NR_ACCUM', valmin=1, valmax=len(pulse_data), valinit=NR_ACCUM, valstep=1)
+    slider.label.set_size(12)  # Adjusted font size for the slider label
 
     # Call update function when slider value is changed
     slider.on_changed(update)
@@ -110,7 +143,7 @@ def calculate_raman_shift_array(wl_array, wl_incident_light):
     return np.array(raman_shift_array)
 
 
-def static_accumulation_plot(folder_path, accumulations_list=[1, 10, 100, 200, 1000, 2000]):
+def static_accumulation_plot(folder_path, accumulations_list=[1, 10, 100, 200, 1000, 2000], chemical="DEFAULT", max_columns=None):
     incident_wavelength = 355  # nm
     max_accum = max(accumulations_list)
 
@@ -119,19 +152,120 @@ def static_accumulation_plot(folder_path, accumulations_list=[1, 10, 100, 200, 1
     wavelengths = loading_functions.load_wavelength_csv_as_array(folder_path)
     raman_shifts = calculate_raman_shift_array(wavelengths, incident_wavelength)
 
+    # If max_columns is not set, use all columns, otherwise limit to max_columns
+    if max_columns is not None:
+        raman_shifts = raman_shifts[:max_columns]
+
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for accum in accumulations_list:
         raman_spectra_2D = simulate_accumulations(pulse_data[:accum])
         raman_spectra_1D = np.mean(raman_spectra_2D, axis=0)
 
+        # If max_columns is set, limit the data to the first max_columns elements
+        if max_columns is not None:
+            raman_spectra_1D = raman_spectra_1D[:max_columns]
+
         # Plot each processed 1D spectrum
         ax.plot(raman_shifts, raman_spectra_1D, label=f"{accum} Accumulations")
 
-    ax.set_title("Comparison of Raman Spectra for Lithium Niobate Different Accumulations")
+    ax.set_title("Comparison of Raman Spectra for " + chemical + " at Different Accumulations")
     plt.xlabel('Raman Shift (cm$^{-1}$)')  # Use LaTeX-style formatting for the superscript
     ax.set_ylabel("Raman Intensity (Counts)")
     ax.legend(title="Number of Accumulations")
 
+    # Save the figure
     plt.savefig(os.path.join('plots', 'accum_comparison.png'))
+    plt.show()
 
+
+def show_2D_raman_spectra(folder_path, accumulations=200, plot=False, chemical='DEFAULT'):
+    raman_spectra_2D_pulses = loading_functions.load_csv_as_matrices(folder_path, max_samples=accumulations)
+    raman_spectra_2D_accumulated = simulate_accumulations(raman_spectra_2D_pulses)
+
+    if plot:
+        plt.figure(figsize=(8, 4))
+        plt.imshow(raman_spectra_2D_accumulated, cmap='gray', aspect='auto')
+        plt.title('Spectral Data for ' + chemical + ' in 2D Form')
+        plt.axis('off')
+        plt.tight_layout()
+        plot_name = chemical + '_2D_Rep_Raman_Spec.png'
+        plt.savefig(os.path.join('plots', plot_name))
+
+        plt.show()
+
+    return raman_spectra_2D_accumulated
+
+
+def plot_raman_spectra_overview(folder_path, folders_to_load, accumulations):
+    """
+    Load and plot an overview of Raman spectra for a list of chemicals.
+
+    Args:
+    folder_path (str): The base path to the folders containing the data.
+    folders_to_load (list): List of folder names (chemicals) to load.
+    accumulations (int): Number of accumulations for each spectra.
+    """
+    raman_spectra_2D_dict = {}
+
+    # Load the initial data
+    for item in folders_to_load:
+        chemical_folder_path = os.path.join(folder_path, item)
+        print("Loading data from:", chemical_folder_path)
+        raman_spectra_2D_dict[item] = show_2D_raman_spectra(chemical_folder_path,
+                                                                           accumulations=accumulations, plot=False,
+                                                                           chemical=item)
+
+    # Number of chemicals
+    num_chemicals = len(raman_spectra_2D_dict)
+
+    # Calculate the grid size to as close to a square as possible, favoring more rows
+    rows = int(np.ceil(np.sqrt(num_chemicals)))
+    cols = int(np.ceil(num_chemicals / rows))
+
+    # Create figure to plot each chemical's data
+    plt.figure(figsize=(3 * cols, 2 * rows))  # Dynamically adjusting figure size
+    for index, (chemical, spectra) in enumerate(raman_spectra_2D_dict.items()):
+        plt.subplot(rows, cols, index + 1)
+        plt.imshow(spectra, cmap='gray', aspect='auto')
+        if chemical == 'LiNb':
+            plt.title('Lithium Niobate')
+        elif chemical == 'DeepHeat':
+            plt.title('Deep Heat')
+        elif chemical == 'CitricAcid':
+            plt.title('Citric Acid')
+        else:
+            plt.title(chemical)
+        plt.axis('off')
+    plt.tight_layout()
+    plt.savefig('plots/raman_spectra_overview.png')
+    plt.show()
+
+
+def show_1D_raman_spectra(folder_path, incident_wavelength=355, accumulations=200, plot=False, chemical='DEFAULT'):
+    raman_spectra_2D_pulses = loading_functions.load_csv_as_matrices(folder_path, max_samples=accumulations)
+    raman_spectra_2D_accumulated = simulate_accumulations(raman_spectra_2D_pulses)
+    raman_spectra_1D = np.mean(raman_spectra_2D_accumulated, axis=0)
+    wavelengths = loading_functions.load_wavelength_csv_as_array(folder_path)
+    raman_shifts = calculate_raman_shift_array(wavelengths, incident_wavelength)
+
+    if plot:
+        plt.figure(figsize=(8, 4))
+        plt.plot(raman_spectra_1D)
+        # Selecting indices for displaying ticks
+        tick_spacing = len(wavelengths) // 10  # Calculate spacing
+        tick_indices = np.arange(0, len(raman_shifts), tick_spacing)  # Indices to show
+        tick_labels = raman_shifts[tick_indices].round(2)  # Corresponding labels
+
+        # Customize the x-axis
+        plt.xticks(ticks=tick_indices, labels=tick_labels)
+        plt.xlabel('Raman Shift (cm$^{-1}$)')  # Use LaTeX-style formatting for the superscript
+        plt.ylabel('Raman Intensity (Counts)')
+        plt.title('Spectral Data for ' + chemical + ' in 1D Form')
+        plt.tight_layout()
+        plot_name = chemical + '_1D_Rep_Raman_Spec.png'
+        plt.savefig(os.path.join('plots', plot_name))
+
+        plt.show()
+
+    return raman_spectra_1D

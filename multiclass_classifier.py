@@ -11,11 +11,11 @@ import zipfile
 import shutil
 
 batch_size = 32
-epochs = 15
+epochs = 25
 use_generator = True
 
 # Path for the zip file and the target directory for extracted contents
-zip_file_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/20240503_092834-2000_sample_9_class_new.zip'
+zip_file_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/20240516_081323-2000_sample_report_multiclass.zip'
 extract_dir = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
 data_file_name = 'split_processed_data.h5'
 
@@ -25,10 +25,10 @@ zip_dir_name = base_name[:-4]  # Remove '.zip'
 data_file_path = os.path.join(extract_dir, zip_dir_name, data_file_name)
 
 # Check if the data file already exists unzipped
-if not os.path.exists(data_file_path):
+#if not os.path.exists(data_file_path):
     # Unzip the file if the data does not exist
-    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        zip_ref.extractall(extract_dir)
+with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+    zip_ref.extractall(extract_dir)
 
 data_to_use = data_file_path
 
@@ -86,7 +86,9 @@ model_vgg.compile(
   # compute the accuracy metric, in addition to the loss
   metrics=['accuracy'])
 
-early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+keras.utils.plot_model(model_vgg, to_file='plots/multiclass_model_plot.png', show_shapes=True, show_layer_names=True)
+
+early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=6, restore_best_weights=True)
 reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.00001)
 model_checkpoint = keras.callbacks.ModelCheckpoint(filepath='best_model.keras', monitor='val_accuracy', save_best_only=True)
 
@@ -105,17 +107,17 @@ else:
                             epochs=epochs,
                             validation_data=(X_val, Y_val),
                             verbose=True,
-                            callbacks=early_stopping)
+                            callbacks=[early_stopping, model_checkpoint])
 
-fig = plt.figure(figsize=[15, 25])
-ax = fig.add_subplot(2, 1, 1)
+fig = plt.figure(figsize=[18, 7])
+ax = fig.add_subplot(1, 2, 1)
 ax.plot(history.history['loss'], label="Training Loss")
 ax.plot(history.history['val_loss'], label="Validation Loss")
 ax.set_title('Training vs Validation Loss', fontsize="20")
 ax.set_xlabel('Training Itterations', fontsize="20")
 ax.set_ylabel('Loss', fontsize="20")
 ax.legend()
-ax = fig.add_subplot(2, 1, 2)
+ax = fig.add_subplot(1, 2, 2)
 ax.plot(history.history['accuracy'], label="Training Accuracy")
 ax.plot(history.history['val_accuracy'], label="Validation Accuracy")
 ax.legend()
@@ -127,15 +129,11 @@ if not os.path.exists('plots'):
     os.makedirs('plots')
 
 # Save the figure
-plt.savefig(os.path.join('plots', '4_class_LossAcc.png'))
+plt.savefig(os.path.join('plots', 'report_multiclass_LossAcc.png'))
 
 if use_generator == True:
-    # Example of calling the function for training and testing datasets
-    deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'train', batch_size, is_multiclass=True)
-    deep_learning_helperFuncs.predict_in_batches(model_vgg, data_to_use, 'test', batch_size, is_multiclass=True)
-
-    evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', '4_class', is_multiclass=True)
+    evaluation_functions.create_confusion_matrix_comparison(model_vgg, data_to_use, 'train', 'test', 'report_multiclass', is_multiclass=True)
 else:
-    evaluation_functions.eval_model_2(model_vgg, X_train, Y_train, X_test, Y_test, '4_class')
+    evaluation_functions.eval_model_2(model_vgg, X_train, Y_train, X_test, Y_test, 'report_multiclass')
 
 shutil.rmtree(extract_dir)
