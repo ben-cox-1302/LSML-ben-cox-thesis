@@ -1,22 +1,7 @@
-import numpy as np
 import os
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import seaborn as sns
-import matplotlib.pyplot as plt  # for plotting
 import numpy as np  # for reshaping, array manipulation
-import tensorflow as tf  # for bulk image resize
-from sklearn.svm import SVC
-from time import process_time
-from sklearn.model_selection import train_test_split
-import sklearn
 from sklearn.metrics import classification_report
-from tensorflow import keras
-from tensorflow.keras import layers
-import seaborn as sns
-from sklearn.model_selection import train_test_split
 import logging
-from tensorflow.keras import backend as K
 import h5py
 import time
 
@@ -85,33 +70,20 @@ def predict_in_batches(model, file_path, dataset_prefix, batch_size=32, is_multi
     # Optionally, return the predictions and true labels for further analysis
     return predictions, predicted_labels, true_labels
 
-def generate_data(x, y, batch_size=32, augment=False):
-    """
-    Loads data into a tf.data.Dataset and prepares it for training by
-    shuffling, batching, and optionally augmenting. Ensures data repeats indefinitely.
-    """
-    # Create a tf.data.Dataset object from your numpy arrays
-    dataset = tf.data.Dataset.from_tensor_slices((x, y))
-
-    # Shuffle the dataset (important for training)
-    dataset = dataset.shuffle(buffer_size=len(x))
-
-    # Data augmentation can be added here if needed
-    if augment:
-        # Example of a simple augmentation: flipping the image horizontally
-        dataset = dataset.map(lambda x, y: (tf.image.flip_left_right(x), y))
-
-    # Batch the data
-    dataset = dataset.batch(batch_size)
-
-    # Prefetch data for faster consumption
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)
-
-    # Make sure the dataset can be iterated indefinitely
-    return dataset.repeat()  # Repeat the dataset indefinitely
-
 
 def hdf5_generator(file_path, dataset_type='train', batch_size=32):
+    """
+    Reads x and y data directly from disk and stores it into RAM to be used temporarily
+    Parameters
+    ----------
+    file_path : the direct path to the data being read
+    dataset_type : dataset type being either train, val, or test
+    batch_size : the number of data points to load
+
+    Returns
+    -------
+    The x and y data for the model to use
+    """
     with h5py.File(file_path, 'r') as f:
         X_key = f'X_{dataset_type}'
         Y_key = f'Y_{dataset_type}'
