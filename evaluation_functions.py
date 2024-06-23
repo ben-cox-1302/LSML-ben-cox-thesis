@@ -1,30 +1,17 @@
 import matplotlib as plt
-import tensorflow as tf
-import numpy as np
 import os
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import seaborn as sns
 import matplotlib.pyplot as plt     # for plotting
 import numpy as np                  # for reshaping, array manipulation
 import tensorflow as tf             # for bulk image resize
 from sklearn.metrics import accuracy_score, confusion_matrix
-from sklearn.svm import SVC
-from time import process_time
-from sklearn.model_selection import train_test_split
 import sklearn
-from sklearn.metrics import classification_report
-from tensorflow import keras
-from tensorflow.keras import layers
 import seaborn as sns
-from sklearn.model_selection import train_test_split
 import logging
 from tensorflow.keras import backend as K
 import deep_learning_helperFuncs
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 
 
 def read_label_mapping(file_path):
@@ -44,18 +31,19 @@ def read_label_mapping(file_path):
             label_mapping[int(idx)] = name.strip()
     return label_mapping
 
-def create_confusion_matrix_comparison(model, file_path, train_prefix, test_prefix, model_type, is_multiclass=False):
+
+def create_confusion_matrix_comparison_gen(model, file_path, train_prefix, test_prefix, model_type, is_multiclass=False):
     """
     Generates confusion matrices for both training and testing datasets from an HDF5 file,
     showing performance visualization using predictions made in batches and labeling axes using labels from a specified file.
-
-    Args:
-        model: The trained model to use for predictions.
-        file_path: Path to the HDF5 file containing 'X' and 'Y' datasets.
-        train_prefix: Prefix for training dataset keys in the HDF5 file (e.g., 'train').
-        test_prefix: Prefix for testing dataset keys in the HDF5 file (e.g., 'test').
-        model_type: A string label to describe the model (used in file naming).
-        is_multiclass: Boolean indicating if the model handles multiclass classification.
+    Parameters
+    ----------
+    model: The trained model to use for predictions.
+    file_path: Path to the HDF5 file containing 'X' and 'Y' datasets.
+    train_prefix: Prefix for training dataset keys in the HDF5 file (e.g., 'train').
+    test_prefix: Prefix for testing dataset keys in the HDF5 file (e.g., 'test').
+    model_type: A string label to describe the model (used in file naming).
+    is_multiclass: Boolean indicating if the model handles multiclass classification.
     """
     # Construct the path to the label file
     label_file = os.path.join(os.path.dirname(file_path), 'folder_labels.txt')
@@ -101,32 +89,18 @@ def create_confusion_matrix_comparison(model, file_path, train_prefix, test_pref
     plt.savefig(os.path.join('plots', model_type + '_ConfMatrix.png'))
     plt.close(fig)
 
-def plot_images(x, y):
 
-    fig = plt.figure()
-    for i in range(6):
-        ax = fig.add_subplot(3, 2, i + 1)
-
-        # Check if data is float type and in range [0, 1], or rescale if it's [0, 255]
-        if x[i].dtype == np.float32:
-            img_to_plot = x[i] if x[i].min() >= 0 and x[i].max() <= 1 else x[i] / 255.0
-        else:
-            img_to_plot = x[i] / 255.0
-
-        ax.imshow(img_to_plot, cmap='gray')  # Use cmap='gray' for grayscale images
-        ax.set_title(y[i])
-        ax.axis('off')
-        # Create the folder if it doesn't already exist
-    if not os.path.exists('plots'):
-        os.makedirs('plots')
-
-    # Save the figure
-    plt.savefig(os.path.join('plots', 'Images.png'))
-
-
-def display_images_with_predictions(x_data, predictions, true_labels, model, num_disp):
-
-    predictions = model.predict(x_data[:num_disp])  # Make predictions on the first 10 samples
+def display_images_with_predictions(x_data, true_labels, model, num_disp):
+    """
+    Displays the first x samples of the x_data with its predicted label
+    Parameters
+    ----------
+    x_data : the 2D raman spectra being evaluated
+    true_labels : the correct predictions for the data (Y)
+    model : the model being used to make the predictions
+    num_disp : the number of images to display
+    """
+    predictions = model.predict(x_data[:num_disp])
 
     plt.figure(figsize=(15, 8))
     for i in range(len(x_data)):
@@ -177,7 +151,19 @@ def show_samples(X, Y, class_labels, samples_per_class=2):
     plt.tight_layout()
     plt.savefig('plots/samples_example.png')
 
-def eval_model_2(model, train, train_y, test, test_y, model_type):
+
+def create_confusion_matrix_comparison_no_gen(model, train, train_y, test, test_y, model_type):
+    """
+    Creates a confusion matrix for both the train and test set without using a generator and saves it as a png
+    Parameters
+    ----------
+    model : the model being used for the predictions and evaluation
+    train : the training x data
+    train_y : the training y data
+    test : the testing x data
+    test_y : the testing y data
+    model_type : the model type for saving
+    """
     fig = plt.figure(figsize=[10, 15])
 
     ax = fig.add_subplot(2, 1, 1)
@@ -218,5 +204,3 @@ def eval_model_2(model, train, train_y, test, test_y, model_type):
 
     # Save the figure
     plt.savefig(os.path.join('plots', save_name))
-
-
