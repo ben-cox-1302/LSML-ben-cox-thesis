@@ -32,8 +32,16 @@ def simulate_accumulations(pulse_data):
     return acc_matrix_baseline_added
 
 
-
 def interactive_accumulation_plot(folder_path, chemical, accumulations=200, max_columns=None):
+    """
+    Creates a plot of the raman spectra in 1D and 2D where the number of accumulations can be manipulated using a slider
+    Parameters
+    ----------
+    folder_path : the direct path to the folder of the csv files being used to create the interactive plot
+    chemical : the chemical being evaluated as a string for naming conventions
+    accumulations : the max number of accumulations to simulate
+    max_columns : the max number of columns to load which can be used to cut off the spectra bounds fall off
+    """
     # Load the data
     pulse_data = loading_functions.load_csv_as_matrices(folder_path, skip_alternate_rows=False, max_samples=accumulations)
 
@@ -144,6 +152,15 @@ def calculate_raman_shift_array(wl_array, wl_incident_light):
 
 
 def static_accumulation_plot(folder_path, accumulations_list=[1, 10, 100, 200, 1000, 2000], chemical="DEFAULT", max_columns=None):
+    """
+    Plots the 1D spectra for a different number of accumulations on multiple plots
+    Parameters
+    ----------
+    folder_path : the direct path to the folder with the csv files of the data being evaluated
+    accumulations_list : the accumulations that are to be simulated
+    chemical : the chemical being evaluated as a string for naming conventions
+    max_columns : the max number of columns to load which can be used to cut off the spectra bounds fall off
+    """
     incident_wavelength = 355  # nm
     max_accum = max(accumulations_list)
 
@@ -180,6 +197,15 @@ def static_accumulation_plot(folder_path, accumulations_list=[1, 10, 100, 200, 1
 
 
 def show_2D_raman_spectra(folder_path, accumulations=200, plot=False, chemical='DEFAULT'):
+    """
+    Plots the specified raman data as a 2D plot
+    Parameters
+    ----------
+    folder_path : a direct path to where the csv data is stored
+    accumulations : the accumulations that are to be simulated
+    plot : used to select if the plot is displayed
+    chemical : the chemical being evaluated as a string for naming conventions
+    """
     raman_spectra_2D_pulses = loading_functions.load_csv_as_matrices(folder_path, max_samples=accumulations)
     raman_spectra_2D_accumulated = simulate_accumulations(raman_spectra_2D_pulses)
 
@@ -200,11 +226,11 @@ def show_2D_raman_spectra(folder_path, accumulations=200, plot=False, chemical='
 def plot_raman_spectra_overview(folder_path, folders_to_load, accumulations):
     """
     Load and plot an overview of Raman spectra for a list of chemicals.
-
-    Args:
-    folder_path (str): The base path to the folders containing the data.
-    folders_to_load (list): List of folder names (chemicals) to load.
-    accumulations (int): Number of accumulations for each spectra.
+    Parameters
+    ----------
+    folder_path : The base path to the folders containing the data.
+    folders_to_load : List of folder names (chemicals) to load.
+    accumulations : Number of accumulations for each spectra.
     """
     raman_spectra_2D_dict = {}
 
@@ -243,6 +269,16 @@ def plot_raman_spectra_overview(folder_path, folders_to_load, accumulations):
 
 
 def show_1D_raman_spectra(folder_path, incident_wavelength=355, accumulations=200, plot=False, chemical='DEFAULT'):
+    """
+    Plots the specified raman data as a 1D plot
+    Parameters
+    ----------
+    folder_path : a direct path to where the csv data is stored
+    incident_wavelength : the incident wavelength used during the data collection
+    accumulations : the accumulations that are to be simulated
+    plot : used to select if the plot is displayed
+    chemical : the chemical being evaluated as a string for naming conventions
+    """
     raman_spectra_2D_pulses = loading_functions.load_csv_as_matrices(folder_path, max_samples=accumulations)
     raman_spectra_2D_accumulated = simulate_accumulations(raman_spectra_2D_pulses)
     raman_spectra_1D = np.mean(raman_spectra_2D_accumulated, axis=0)
