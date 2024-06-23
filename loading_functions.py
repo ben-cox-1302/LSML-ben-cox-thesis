@@ -7,6 +7,18 @@ import csv
 
 
 def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=False):
+    """
+    This function loads the csv data from the specified folder as matrices representing the raman spectra in 2D
+    Parameters
+    ----------
+    folder_path : The path to the folder hosting the csv files of the raman spectra
+    max_samples : The max number of data points to load
+    skip_alternate_rows : skips the alternate rows to reduce data size
+
+    Returns
+    -------
+    An array of matrices that are the 2D raman spectra.
+    """
     zip_files = glob.glob(os.path.join(folder_path, '*.zip'))
     if not zip_files:
         raise FileNotFoundError("No zip files found in the specified directory.")
@@ -18,6 +30,7 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
         pattern = os.path.join(extracted_folder, '*.csv')
         all_csv_files = glob.glob(pattern)
 
+        # The wavelength file stores different data used elsewhere
         csv_files = [file for file in all_csv_files if "Wavelengths" not in os.path.basename(file)]
 
         if max_samples is not None:
@@ -35,6 +48,17 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
 
 
 def load_wavelength_csv_as_array(folder_path):
+    """
+    Loads the wavelength data as an array which corresponds with the 2D spectra data in the same folder
+    Parameters
+    ----------
+    folder_path : the folder path which matches the 2D data
+
+    Returns
+    -------
+    An array of the wavelength data
+    """
+
     # Find the zip file in the specified directory
     zip_files = glob.glob(os.path.join(folder_path, '*.zip'))
     if not zip_files:
