@@ -1,13 +1,8 @@
 import os
-import glob
-import pandas as pd
 import numpy as np
 from datetime import datetime
-import zipfile
-import matplotlib.pyplot as plt
 import h5py
 import loading_functions
-
 
 # User can specify the maximum number of samples to load from each folder
 max_samples_per_folder = 2000  # Set this to None to load all samples
@@ -29,7 +24,7 @@ with open(labels_file_path, 'w') as f:
     for folder in folders:
         folder_path = os.path.join(directory, folder)
         print("Processing folder:", folder)
-        data_X = loading_functions.load_csv_as_matrices(folder_path, max_samples=(max_samples_per_folder))
+        data_X = loading_functions.load_csv_as_matrices(folder_path, max_samples=max_samples_per_folder)
         data_Y = np.full(len(data_X), i, dtype=np.uint8)
         if data_X.size > 0:
             label_data_X_path = os.path.join(save_path, f'data_X_label_{i}.npy')
@@ -47,7 +42,8 @@ total_size_Y = sum(sizes_Y)
 dtype_X = np.float32  # Assuming data_X uses float32
 dtype_Y = np.uint8    # Assuming data_Y uses uint8
 
-memmap_X = np.memmap(os.path.join(save_path, 'X.dat'), dtype=dtype_X, mode='w+', shape=(total_size_X, data_X.shape[1], data_X.shape[2]))
+memmap_X = np.memmap(os.path.join(save_path, 'X.dat'), dtype=dtype_X, mode='w+',
+                     shape=(total_size_X, data_X.shape[1], data_X.shape[2]))
 memmap_Y = np.memmap(os.path.join(save_path, 'Y.dat'), dtype=dtype_Y, mode='w+', shape=(total_size_Y,))
 
 current_index_X = 0

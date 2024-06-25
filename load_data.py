@@ -5,15 +5,17 @@ from datetime import datetime
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 import gc
-import evaluation_functions
 import matplotlib.pyplot as plt
 import shutil
 
 import loading_functions
 
+MANUAL_SPLIT = False
+
 # Data being imported
 data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
-folder_labels = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
+folder_labels = \
+    '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
 
 # data_to_use = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
 # folder_labels = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
@@ -34,38 +36,41 @@ with h5py.File(data_to_use, 'r') as h5f:
     print(X.shape)
     print(Y.shape)
 
-    #print("Splitting the data: ")
-    #indices = np.arange(X.shape[0])
-    #np.random.seed(42)  # For reproducibility
-    #np.random.shuffle(indices)
+    if MANUAL_SPLIT:
+        print("Splitting the data: ")
+        indices = np.arange(X.shape[0])
+        np.random.seed(42)  # For reproducibility
+        np.random.shuffle(indices)
 
-    ## Shuffled data
-    #X_shuffled = X[indices]
-    #Y_shuffled = Y[indices]
+        # Shuffled data
+        X_shuffled = X[indices]
+        Y_shuffled = Y[indices]
 
-    ## Define the proportions
-    #test_size = 0.2
-    #val_size = 0.1
+        # Define the proportions
+        test_size = 0.2
+        val_size = 0.1
 
-    ## Calculate the split indices
-    #test_split_index = int(X.shape[0] * test_size)
-    #val_split_index = int(X.shape[0] * (test_size + val_size))
+        # Calculate the split indices
+        test_split_index = int(X.shape[0] * test_size)
+        val_split_index = int(X.shape[0] * (test_size + val_size))
 
-    ## Split the data
-    #X_test = X_shuffled[:test_split_index]
-    #Y_test = Y_shuffled[:test_split_index]
+        # Split the data
+        X_test = X_shuffled[:test_split_index]
+        Y_test = Y_shuffled[:test_split_index]
 
-    #X_val = X_shuffled[test_split_index:val_split_index]
-    #Y_val = Y_shuffled[test_split_index:val_split_index]
+        X_val = X_shuffled[test_split_index:val_split_index]
+        Y_val = Y_shuffled[test_split_index:val_split_index]
 
-    #X_train = X_shuffled[val_split_index:]
-    #Y_train = Y_shuffled[val_split_index:]
+        X_train = X_shuffled[val_split_index:]
+        Y_train = Y_shuffled[val_split_index:]
 
-    # Split the data into train and remaining (temporarily hold validation and test together)
-    X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
+    else:
+        # Split the data into train and remaining (temporarily hold validation and test together)
+        X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
 
-    # Split the remaining data into validation and test sets
-    X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=(2/3), random_state=42, stratify=Y_temp)
+        # Split the remaining data into validation and test sets
+        X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=(2/3),
+                                                        random_state=42, stratify=Y_temp)
 
     # Optional: Print the sizes to verify the splits
     print(f"Train set size: {len(X_train)}")

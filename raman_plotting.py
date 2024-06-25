@@ -43,7 +43,8 @@ def interactive_accumulation_plot(folder_path, chemical, accumulations=200, max_
     max_columns : the max number of columns to load which can be used to cut off the spectra bounds fall off
     """
     # Load the data
-    pulse_data = loading_functions.load_csv_as_matrices(folder_path, skip_alternate_rows=False, max_samples=accumulations)
+    pulse_data = loading_functions.load_csv_as_matrices(folder_path, skip_alternate_rows=False,
+                                                        max_samples=accumulations)
 
     # Load wavelength data
     wavelengths = loading_functions.load_wavelength_csv_as_array(folder_path)
@@ -84,7 +85,8 @@ def interactive_accumulation_plot(folder_path, chemical, accumulations=200, max_
 
     # Display the initial 2D data
     accumulated_data = accumulations_data[NR_ACCUM - 1]
-    im = ax.imshow(accumulated_data[:, :max_columns], cmap='gray', vmin=accumulated_data.min(), vmax=accumulated_data.max(), aspect='auto')
+    im = ax.imshow(accumulated_data[:, :max_columns], cmap='gray', vmin=accumulated_data.min(),
+                   vmax=accumulated_data.max(), aspect='auto')
     ax.set_title(f"{NR_ACCUM} Accumulations Data for {chemical}", fontsize=20)
 
     # Remove axis labels and ticks for 2D data
@@ -151,7 +153,8 @@ def calculate_raman_shift_array(wl_array, wl_incident_light):
     return np.array(raman_shift_array)
 
 
-def static_accumulation_plot(folder_path, accumulations_list=[1, 10, 100, 200, 1000, 2000], chemical="DEFAULT", max_columns=None):
+def static_accumulation_plot(folder_path, accumulations_list=[1, 10, 100, 200, 1000, 2000],
+                             chemical="DEFAULT", max_columns=None):
     """
     Plots the 1D spectra for a different number of accumulations on multiple plots
     Parameters

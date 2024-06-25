@@ -145,7 +145,9 @@ def show_samples(X, Y, class_labels, samples_per_class=2):
         for j, sample in enumerate(samples):
             index = i * samples_per_class + j
             plt.subplot(rows, cols, index + 1)
-            plt.imshow(X[sample].squeeze(), cmap=None if X[sample].shape[-1] == 3 else 'gray', aspect='auto')  # 'auto' stretches the image to fill the subplot
+            plt.imshow(X[sample].squeeze(),
+                       cmap=None if X[sample].shape[-1] == 3 else 'gray',
+                       aspect='auto')  # 'auto' stretches the image to fill the subplot
             plt.title(class_labels[i])
             plt.axis('off')
     plt.tight_layout()
