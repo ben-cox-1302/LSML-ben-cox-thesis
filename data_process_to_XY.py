@@ -3,11 +3,12 @@ import numpy as np
 from datetime import datetime
 import h5py
 import loading_functions
+import matplotlib.pyplot as plt
 
 # User can specify the maximum number of samples to load from each folder
-max_samples_per_folder = 2000  # Set this to None to load all samples
+max_samples_per_folder = None  # Set this to None to load all samples
 
-directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/BinaryClassifier/'
+directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/mid_year_diverse_data/'
 files_and_folders = os.listdir(directory)
 folders = [item for item in files_and_folders if os.path.isdir(os.path.join(directory, item))]
 base_directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/'
@@ -39,8 +40,8 @@ with open(labels_file_path, 'w') as f:
 total_size_X = sum(sizes_X)
 total_size_Y = sum(sizes_Y)
 
-dtype_X = np.float32  # Assuming data_X uses float32
-dtype_Y = np.uint8    # Assuming data_Y uses uint8
+dtype_X = np.float16  # Assuming data_X uses float32
+dtype_Y = np.uint8  # Assuming data_Y uses uint8
 
 memmap_X = np.memmap(os.path.join(save_path, 'X.dat'), dtype=dtype_X, mode='w+',
                      shape=(total_size_X, data_X.shape[1], data_X.shape[2]))
@@ -58,6 +59,10 @@ for idx in range(i):
     current_index_X += temp_X.shape[0]
     current_index_Y += temp_Y.shape[0]
 
+    # Delete the temporary .npy files immediately after processing
+    os.remove(label_data_X_path)
+    os.remove(label_data_Y_path)
+
 memmap_X.flush()
 memmap_Y.flush()
 
@@ -68,11 +73,16 @@ with h5py.File(os.path.join(save_path, 'final_data.h5'), 'w') as h5f:
 
 print(f'Final concatenated data saved to {os.path.join(save_path, "final_data.h5")}')
 
-# Cleanup: Delete the .npy and .dat files
-for idx in range(i):
-    os.remove(os.path.join(save_path, f'data_X_label_{idx}.npy'))
-    os.remove(os.path.join(save_path, f'data_Y_label_{idx}.npy'))
+# Cleanup: Delete the .dat files
 os.remove(os.path.join(save_path, 'X.dat'))
 os.remove(os.path.join(save_path, 'Y.dat'))
 
 print("Temporary .npy and .dat files have been deleted.")
+
+# Plotting class balance
+plt.figure(figsize=(10, 6))
+plt.bar(range(i), sizes_Y, tick_label=[f"Class {idx}" for idx in range(i)])
+plt.xlabel('Classes')
+plt.ylabel('Number of Samples')
+plt.title('Class Balance')
+plt.show()

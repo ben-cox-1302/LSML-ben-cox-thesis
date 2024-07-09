@@ -8,16 +8,16 @@ import csv
 
 def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=False):
     """
-    This function loads the csv data from the specified folder as matrices representing the raman spectra in 2D
+    This function loads the csv data from the specified folder as matrices representing the Raman spectra in 2D
     Parameters
     ----------
-    folder_path : The path to the folder hosting the csv files of the raman spectra
+    folder_path : The path to the folder hosting the csv files of the Raman spectra
     max_samples : The max number of data points to load
     skip_alternate_rows : skips the alternate rows to reduce data size
 
     Returns
     -------
-    An array of matrices that are the 2D raman spectra.
+    An array of matrices that are the 2D Raman spectra.
     """
     zip_files = glob.glob(os.path.join(folder_path, '*.zip'))
     if not zip_files:
@@ -43,6 +43,12 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
                 all_data_matrices.append(df.values)
             except Exception as e:
                 print("Failed to read:", file_path, "Error:", e)
+
+        # Delete the extracted files after processing
+        for file_path in all_csv_files:
+            os.remove(file_path)
+        os.rmdir(extracted_folder)
+
     print("Final count of data matrices:", len(all_data_matrices))
     return np.stack(all_data_matrices) if all_data_matrices else np.array([])
 

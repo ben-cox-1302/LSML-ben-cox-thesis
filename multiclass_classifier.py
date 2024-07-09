@@ -11,7 +11,7 @@ import zipfile
 import shutil
 
 batch_size = 32
-epochs = 1
+epochs = 10
 use_generator = True
 
 # Path for the zip file and the target directory for extracted contents
@@ -20,7 +20,7 @@ zip_file_path = \
 extract_dir = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
 data_file_name = 'split_processed_data.h5'
 model_save_path = 'models/'
-model_name = 'sem1_model3'
+model_name = 'sem1_model5'
 model_file_path = model_save_path + model_name + '.h5'
 
 if os.path.exists(model_file_path):

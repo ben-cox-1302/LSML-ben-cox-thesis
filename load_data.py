@@ -8,9 +8,7 @@ import gc
 import matplotlib.pyplot as plt
 import shutil
 
-import loading_functions
-
-MANUAL_SPLIT = False
+MANUAL_SPLIT = True
 
 # Data being imported
 data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
@@ -23,7 +21,7 @@ folder_labels = \
 # Data being exported
 # Define the date of processing and custom text
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
-custom_text = "2000_sample_report_multiclass"
+custom_text = "diverse_sample_report_multiclass"
 folder_name = f"{date_of_processing}-{custom_text}"
 base_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/'
 full_path = os.path.join(base_path, folder_name)
@@ -54,12 +52,18 @@ with h5py.File(data_to_use, 'r') as h5f:
         test_split_index = int(X.shape[0] * test_size)
         val_split_index = int(X.shape[0] * (test_size + val_size))
 
+        gc.collect()
+
         # Split the data
         X_test = X_shuffled[:test_split_index]
         Y_test = Y_shuffled[:test_split_index]
 
+        gc.collect()
+
         X_val = X_shuffled[test_split_index:val_split_index]
         Y_val = Y_shuffled[test_split_index:val_split_index]
+
+        gc.collect()
 
         X_train = X_shuffled[val_split_index:]
         Y_train = Y_shuffled[val_split_index:]
@@ -68,9 +72,15 @@ with h5py.File(data_to_use, 'r') as h5f:
         # Split the data into train and remaining (temporarily hold validation and test together)
         X_train, X_temp, Y_train, Y_temp = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
 
+        # Force garbage collection to free up memory
+
+        gc.collect()
+
         # Split the remaining data into validation and test sets
         X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=(2/3),
                                                         random_state=42, stratify=Y_temp)
+
+        gc.collect()
 
     # Optional: Print the sizes to verify the splits
     print(f"Train set size: {len(X_train)}")
