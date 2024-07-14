@@ -10,7 +10,7 @@ import loading_functions
 
 
 # User can specify the maximum number of samples to load from each folder
-max_samples_per_folder = 2000  # Set this to None to load all samples
+max_samples_per_folder = None  # Set this to None to load all samples
 
 directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/mid_year_diverse_data/'
 files_and_folders = os.listdir(directory)
@@ -29,7 +29,7 @@ with open(labels_file_path, 'w') as f:
     for folder in folders:
         folder_path = os.path.join(directory, folder)
         print("Processing folder:", folder)
-        data_X = loading_functions.load_csv_as_matrices(folder_path, max_samples=(max_samples_per_folder+1))
+        data_X = loading_functions.load_csv_as_matrices(folder_path, max_samples=(max_samples_per_folder))
         data_Y = np.full(len(data_X), i, dtype=np.uint8)
         if data_X.size > 0:
             label_data_X_path = os.path.join(save_path, f'data_X_label_{i}.npy')

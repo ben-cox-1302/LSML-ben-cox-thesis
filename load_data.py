@@ -11,9 +11,9 @@ import shutil
 MANUAL_SPLIT = True
 
 # Data being imported
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
+data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240709-203523/final_data.h5'
 folder_labels = \
-    '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
+    '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240709-203523/folder_labels.txt'
 
 # data_to_use = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
 # folder_labels = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
