@@ -11,7 +11,7 @@ import zipfile
 import shutil
 
 batch_size = 32
-epochs = 10
+epochs = 3
 use_generator = True
 
 # Path for the zip file and the target directory for extracted contents
@@ -20,7 +20,7 @@ zip_file_path = \
 extract_dir = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
 data_file_name = 'split_processed_data.h5'
 model_save_path = 'models/'
-model_name = 'sem1_model5'
+model_name = 'sem1_model6'
 model_file_path = model_save_path + model_name + '.h5'
 
 if os.path.exists(model_file_path):
@@ -151,4 +151,13 @@ else:
     evaluation_functions.create_confusion_matrix_comparison_no_gen(model, X_train, Y_train,
                                                                    X_test, Y_test, 'report_multiclass')
 
-shutil.rmtree(extract_dir)
+try:
+    if os.path.exists(extract_dir):
+        if not os.listdir(extract_dir):  # Check if the directory is empty
+            shutil.rmtree(extract_dir)
+        else:
+            print(f"The directory {extract_dir} is not empty.")
+    else:
+        print(f"The directory {extract_dir} does not exist.")
+except OSError as e:
+    print(f"Error: {e.filename} - {e.strerror}.")
