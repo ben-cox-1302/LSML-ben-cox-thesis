@@ -11,7 +11,7 @@ import zipfile
 import shutil
 
 batch_size = 32
-epochs = 20
+epochs = 1
 use_generator = True
 
 # Path for the zip file and the target directory for extracted contents
@@ -20,8 +20,8 @@ zip_file_path = \
 extract_dir = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
 data_file_name = 'split_processed_data.h5'
 model_save_path = 'models/'
-model_name = 'diverse_model_preSem2_2'
-model_file_path = model_save_path + model_name + '.h5'
+model_name = 'diverse_model_preSem2_3_dont_use2'
+model_file_path = model_save_path + model_name + '.keras'
 
 if os.path.exists(model_file_path):
     raise ValueError("Model name already exists, please update variable model_name")
@@ -97,7 +97,7 @@ keras.utils.plot_model(model, to_file='plots/multiclass_model_plot.png', show_sh
 
 early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=6, restore_best_weights=True)
 reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.00001)
-model_checkpoint = keras.callbacks.ModelCheckpoint(filepath='best_model.keras',
+model_checkpoint = keras.callbacks.ModelCheckpoint(filepath=model_file_path,
                                                    monitor='val_accuracy', save_best_only=True)
 
 
