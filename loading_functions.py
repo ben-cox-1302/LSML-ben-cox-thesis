@@ -103,3 +103,23 @@ def read_class_labels(filename):
             class_name = line.split(':')[0].strip()  # Split the line at ':' and strip whitespace
             class_labels.append(class_name)
     return class_labels
+
+
+def load_fluro_array(csv_file_path):
+    """
+    Load the 'Invert A' column from a CSV file, remove the unit and convert it to a numpy array of numerical values.
+
+    Parameters:
+    file_path (str): Path to the CSV file.
+
+    Returns:
+    np.ndarray: Numpy array containing the numerical values of the 'Invert A' column.
+    """
+    data = pd.read_csv(csv_file_path)
+
+    # Convert the 'Invert A' column to a numeric numpy array, excluding the first element (unit)
+    time_numeric = pd.to_numeric(data['Time'][1:]).to_numpy()
+    invert_a_array_numeric = pd.to_numeric(data['Invert A'][1:]).to_numpy()
+
+    return invert_a_array_numeric, time_numeric
+
