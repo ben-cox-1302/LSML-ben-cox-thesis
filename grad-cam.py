@@ -127,13 +127,13 @@ def remove_cosmic_rays(data, threshold_factor=5):
 
     return cleaned_data
 
-#linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/07-06-24-LithiumNiobate_1pulse_1000acq/07-06-24-LithiumNiobate_1pulse_1000acq5.csv'
-# linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/28-03-24-Paracetamol_1pulse_2000acq_BC/28-03-24-Paracetamol_1pulse_2000acq_BC50.csv'
+# linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/07-06-24-LithiumNiobate_1pulse_1000acq/07-06-24-LithiumNiobate_1pulse_1000acq5.csv'
+linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/28-03-24-Paracetamol_1pulse_2000acq_BC/28-03-24-Paracetamol_1pulse_2000acq_BC50.csv'
 # linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/05-04-24-Bicarb_1pulse_2000acq_BC/05-04-24-Bicarb_1pulse_2000acq_BC5.csv'
 # linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/05-04-24-DeepHeat_1pulse_2000acq_BC/05-04-24-DeepHeat_1pulse_2000acq_BC50.csv'
-linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/04-04-24-Water_1pulse_2000acq_BC/04-04-24-Water_1pulse_2000acq_BC5.csv'
+# linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/04-04-24-Water_1pulse_2000acq_BC/04-04-24-Water_1pulse_2000acq_BC5.csv'
 
-model_path = '/home/bdc-pc/git_repos/LSML-ben-cox-thesis/models/sem1_model5.h5'
+model_path = '/home/bdc-pc/git_repos/LSML-ben-cox-thesis/models/diverse_model_grad_cam.keras'
 last_layer_name = 'conv2d_layer5'
 
 model = tf.keras.models.load_model(model_path)

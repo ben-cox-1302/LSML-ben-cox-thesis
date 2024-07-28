@@ -11,7 +11,7 @@ import zipfile
 import shutil
 
 batch_size = 32
-epochs = 1
+epochs = 5
 use_generator = True
 
 # Path for the zip file and the target directory for extracted contents
@@ -20,7 +20,7 @@ zip_file_path = \
 extract_dir = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
 data_file_name = 'split_processed_data.h5'
 model_save_path = 'models/'
-model_name = 'diverse_model_preSem2_3_dont_use2'
+model_name = 'diverse_model_grad_cam'
 model_file_path = model_save_path + model_name + '.keras'
 
 if os.path.exists(model_file_path):
@@ -56,14 +56,14 @@ x = layers.MaxPool2D(pool_size=(2, 2))(x)
 x = layers.Conv2D(filters=16, kernel_size=(3, 3), padding='same', activation='relu', name='conv2d_layer5')(x)
 x = layers.MaxPool2D(pool_size=(2, 2))(x)
 
-x = layers.Flatten()(x)
+x = layers.GlobalAveragePooling2D()(x)
 
 x = layers.Dense(512, activation='relu')(x)
 x = layers.Dropout(0.5)(x)  # Add dropout to prevent overfitting
 
 outputs = layers.Dense(9, activation='softmax')(x)
 
-model = keras.Model(inputs=inputs, outputs=outputs, name=model_name)
+model = keras.Model(inputs=inputs, outputs=outputs, name="modified_model")
 model.summary()
 
 if use_generator:
