@@ -4,8 +4,11 @@ from sklearn.model_selection import train_test_split
 import fluro_plotting
 from datetime import datetime
 import shutil
+from keras.utils import to_categorical
+from sklearn.preprocessing import MinMaxScaler
+import loading_functions
 
-xy_data_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_fluro_20240729-143240'
+xy_data_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_fluro_20240729-182430'
 labels_file_path = os.path.join(xy_data_path, 'folder_labels.txt')
 save_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split'
 
@@ -33,6 +36,16 @@ X_val, X_test, Y_val, Y_test = train_test_split(X_temp, Y_temp, test_size=(2 / 3
 fluro_plotting.plot_class_balance(Y_train, labels_file_path, 'Class Balance in Y_train')
 fluro_plotting.plot_class_balance(Y_val, labels_file_path, 'Class Balance in Y_val')
 fluro_plotting.plot_class_balance(Y_test, labels_file_path, 'Class Balance in Y_test')
+
+print("Processing Data: ")
+num_classes = len(np.unique(Y_train))
+Y_train = to_categorical(Y_train, num_classes)
+Y_val = to_categorical(Y_val, num_classes)
+Y_test = to_categorical(Y_test, num_classes)
+
+X_train = np.expand_dims(X_train, axis=-1)
+X_val = np.expand_dims(X_val, axis=-1)
+X_test = np.expand_dims(X_test, axis=-1)
 
 print("Saving the split data")
 
