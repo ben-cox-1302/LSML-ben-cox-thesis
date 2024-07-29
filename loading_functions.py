@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pandas as pd
 import csv
+from datetime import datetime
 
 
 def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=False):
@@ -123,3 +124,51 @@ def load_fluro_array(csv_file_path):
 
     return invert_a_array_numeric, time_numeric
 
+
+def fluro_to_xy(folders_path, save_path):
+    """
+    Given a folder path containing subfolders with fluorescence data, the function will load the data into X and Y arrays.
+
+    Parameters
+    ----------
+    folders_path : the absolute path to the folder containing subfolders of fluorescence data
+
+    Returns
+    -------
+    X : numpy array of the signal data
+    Y : numpy array of the corresponding folder names
+    t : numpy of array of the time vectors
+    """
+
+    X = []
+    Y = []
+    t = []
+    folder_name = f"x_y_processed_fluro_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    save_folder = os.path.join(save_path, folder_name)
+    if not os.path.exists(save_folder):
+        os.makedirs(save_folder)
+    labels_file_path = os.path.join(save_folder, 'folder_labels.txt')
+    i = 0
+    with open(labels_file_path, 'w') as label_file:
+        for folder in os.listdir(folders_path):
+            print("Processing: " + folder)
+            full_path = os.path.join(folders_path, folder)
+            for filename in os.listdir(full_path):
+                f = os.path.join(full_path, filename)
+                signal, time = load_fluro_array(f)
+                X.append(signal)
+                Y.append(i)
+                t.append(time)
+            label_file.write(f"{folder}: {i}\n")
+            i += 1
+
+    X = np.array(X)
+    Y = np.array(Y)
+    t = np.array(t)
+
+    # Save X and Y arrays
+    np.save(os.path.join(save_folder, 'X.npy'), X)
+    np.save(os.path.join(save_folder, 'Y.npy'), Y)
+    np.save(os.path.join(save_folder, 't.npy'), t)
+
+    return X, Y, t, labels_file_path
