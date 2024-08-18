@@ -8,7 +8,7 @@ from keras.utils import to_categorical
 from sklearn.preprocessing import MinMaxScaler
 import loading_functions
 
-xy_data_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_fluro_20240729-182430'
+xy_data_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_fluro_20240805-114731'
 labels_file_path = os.path.join(xy_data_path, 'folder_labels.txt')
 save_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split'
 

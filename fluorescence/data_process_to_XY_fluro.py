@@ -5,7 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 file_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/28-05-24-DecayData'
 save_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data'
-NORMALIZE = True
+NORMALIZE = False
 
 save_path_xy = os.path.join(save_path, 'data_xy')
 

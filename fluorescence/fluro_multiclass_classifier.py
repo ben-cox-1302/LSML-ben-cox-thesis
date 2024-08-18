@@ -18,7 +18,7 @@ import evaluation_functions
 batch_size = 32
 epochs = 50
 model_name = 'fluro_model_normalized'
-data_xy_split_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/x_y_processed_fluro_20240729-182633'
+data_xy_split_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/x_y_processed_fluro_20240805-115146'
 
 model_save_path = 'models/'
 model_name = f"{model_name}{datetime.now().strftime('%Y%m%d-%H%M%S')}"
