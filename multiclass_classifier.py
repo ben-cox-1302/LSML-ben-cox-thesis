@@ -11,16 +11,16 @@ import zipfile
 import shutil
 
 batch_size = 32
-epochs = 25
+epochs = 2
 use_generator = True
 
 # Path for the zip file and the target directory for extracted contents
 zip_file_path = \
-    '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/20240709_212146-diverse_sample_report_multiclass.zip'
-extract_dir = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
+    '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split/20240709_212146-diverse_sample_report_multiclass.zip'
+extract_dir = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
 data_file_name = 'split_processed_data.h5'
 model_save_path = 'models/'
-model_name = 'diverse_model_grad_cam_2'
+model_name = 'diverse_model_grad_cam_dont_use'
 model_file_path = model_save_path + model_name + '.keras'
 
 if os.path.exists(model_file_path):

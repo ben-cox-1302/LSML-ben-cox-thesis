@@ -24,6 +24,8 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
     if not zip_files:
         raise FileNotFoundError("No zip files found in the specified directory.")
     all_data_matrices = []
+    file_names = []
+
     for zip_file_path in zip_files:
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
             zip_ref.extractall(folder_path)
@@ -42,6 +44,7 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
             try:
                 df = pd.read_csv(file_path, header=None, skiprows=skiprows, dtype=np.float32)
                 all_data_matrices.append(df.values)
+                file_names.append(file_path)
             except Exception as e:
                 print("Failed to read:", file_path, "Error:", e)
 
@@ -50,8 +53,14 @@ def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=Fals
             os.remove(file_path)
         os.rmdir(extracted_folder)
 
+    # Print the size of all data matrices along with the exact file name
+    for i, (matrix, file_name) in enumerate(zip(all_data_matrices, file_names)):
+        if matrix.shape != (253, 1024):
+            print(f"Size of matrix {i + 1} from file '{file_name}': {matrix.shape}")
+
     print("Final count of data matrices:", len(all_data_matrices))
     return np.stack(all_data_matrices) if all_data_matrices else np.array([])
+
 
 
 def load_wavelength_csv_as_array(folder_path):

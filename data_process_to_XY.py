@@ -12,10 +12,10 @@ import loading_functions
 # User can specify the maximum number of samples to load from each folder
 max_samples_per_folder = None  # Set this to None to load all samples
 
-directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/mid_year_diverse_data/'
+directory = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_raw/mid_sem_2_diverse/'
 files_and_folders = os.listdir(directory)
 folders = [item for item in files_and_folders if os.path.isdir(os.path.join(directory, item))]
-base_directory = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/'
+base_directory = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy/'
 folder_name = f"x_y_processed_{max_samples_per_folder}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 save_path = os.path.join(base_directory, folder_name)
 if not os.path.exists(save_path):
