@@ -9,18 +9,19 @@ import deep_learning_helperFuncs
 import h5py
 import zipfile
 import shutil
+from tensorflow.keras.optimizers import AdamW
 
 batch_size = 32
-epochs = 2
+epochs = 30
 use_generator = True
 
 # Path for the zip file and the target directory for extracted contents
 zip_file_path = \
-    '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split/20240709_212146-diverse_sample_report_multiclass.zip'
+    '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split/20240826_113633-midsem2_diverse_noReducedPower.zip'
 extract_dir = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split/temp_extracted'
 data_file_name = 'split_processed_data.h5'
 model_save_path = 'models/'
-model_name = 'diverse_model_grad_cam_dont_use'
+model_name = 'noRedPower_new'
 model_file_path = model_save_path + model_name + '.keras'
 
 if os.path.exists(model_file_path):
@@ -32,7 +33,7 @@ zip_dir_name = base_name[:-4]  # Remove '.zip'
 data_file_path = os.path.join(extract_dir, zip_dir_name, data_file_name)
 
 # Check if the data file already exists unzipped
-#if not os.path.exists(data_file_path):
+# if not os.path.exists(data_file_path):
     # Unzip the file if the data does not exist
 with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
     zip_ref.extractall(extract_dir)
@@ -56,7 +57,7 @@ x = layers.MaxPool2D(pool_size=(2, 2))(x)
 x = layers.Conv2D(filters=16, kernel_size=(3, 3), padding='same', activation='relu', name='conv2d_layer5')(x)
 x = layers.MaxPool2D(pool_size=(2, 2))(x)
 
-x = layers.GlobalAveragePooling2D()(x)
+x = layers.Flatten()(x)
 
 x = layers.Dense(512, activation='relu')(x)
 x = layers.Dropout(0.5)(x)  # Add dropout to prevent overfitting
@@ -89,11 +90,11 @@ model.compile(
   # categorical cross entropy loss
   loss='categorical_crossentropy',
   # adam optimiser
-  optimizer=keras.optimizers.Adam(),
+  optimizer=AdamW(),
   # compute the accuracy metric, in addition to the loss
   metrics=['accuracy'])
 
-keras.utils.plot_model(model, to_file='plots/multiclass_model_plot.png', show_shapes=True, show_layer_names=True)
+# keras.utils.plot_model(model, to_file='plots/multiclass_model_plot.png', show_shapes=True, show_layer_names=True)
 
 early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=6, restore_best_weights=True)
 reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.00001)
