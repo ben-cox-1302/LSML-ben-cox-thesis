@@ -9,6 +9,7 @@ import seaborn as sns
 import logging
 from tensorflow.keras import backend as K
 import deep_learning_helperFuncs
+from datetime import datetime
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -203,6 +204,45 @@ def create_confusion_matrix_comparison_no_gen(model, train, train_y, test, test_
         os.makedirs('plots')
 
     save_name = model_type + '_ConfMatrix.png'
+
+    # Save the figure
+    plt.savefig(os.path.join('plots', save_name))
+
+
+def compare_data_against_model(model, data_dict : dict[str, list], label_file):
+
+    labels_dict = read_label_mapping(label_file)
+
+    num_plots = len(data_dict)
+
+    fig, ax = plt.subplots(1, num_plots, figsize=(min(10 * num_plots, 30), 8))
+
+    # Ensure axes is a list even if there's only one subplot
+    if num_plots == 1:
+        ax = [ax]
+
+    for i, (data_type, data) in enumerate(data_dict.items()):
+        print(f'Processing {data_type} data')
+        X = data[0]
+        Y = data[1]
+        print('Making predictions')
+        pred, indexes, gt_idx = deep_learning_helperFuncs.predict_in_batches_2(model, X, Y, batch_size=32)
+        labels = [labels_dict[idx] for idx in np.unique(gt_idx)]
+        num_classes = Y.shape[1]
+        print('Plotting confusion matrix')
+        confusion_mtx = tf.math.confusion_matrix(gt_idx, indexes)
+        sns.heatmap(confusion_mtx, annot=True, fmt='g', ax=ax[i], cmap="Blues", xticklabels=labels, yticklabels=labels)
+        ax[i].set_xticklabels(ax[i].get_xticklabels(), rotation=30, ha='right')
+        ax[i].set_title(f'Performance on {data_type} Data: {sklearn.metrics.accuracy_score(gt_idx, indexes, normalize=True)}' )
+        ax[i].set_xlabel('Predicted Label')
+        ax[i].set_ylabel('True Label')
+
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+
+    date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    save_name = date_of_processing + '_ConfMatrix.png'
 
     # Save the figure
     plt.savefig(os.path.join('plots', save_name))

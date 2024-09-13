@@ -1,4 +1,6 @@
 import numpy as np
+from tensorflow.python.ops.numpy_ops.np_dtypes import float32
+
 import loading_functions
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
@@ -271,6 +273,11 @@ def plot_raman_spectra_overview(folder_path, folders_to_load, accumulations):
     plt.show()
 
 
+def convert_2D_to_1D(data_2D, baseline=604):
+    data_2D_baseline_correction = data_2D - baseline
+    return np.mean(data_2D_baseline_correction, axis=0)
+
+
 def show_1D_raman_spectra(folder_path, incident_wavelength=355, accumulations=200, plot=False, chemical='DEFAULT'):
     """
     Plots the specified raman data as a 1D plot
@@ -308,3 +315,48 @@ def show_1D_raman_spectra(folder_path, incident_wavelength=355, accumulations=20
         plt.show()
 
     return raman_spectra_1D
+
+
+def plot_samples_stacked_2D(data1_path, data2_path, title1, title2):
+    # Close any previous figures to avoid backend conflicts
+    plt.close('all')
+
+    # Load data from CSV files
+    data_1 = np.loadtxt(data1_path, delimiter=',')
+    data_2 = np.loadtxt(data2_path, delimiter=',')
+
+    # Create figure and axes
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
+
+    # Plot the first array
+    ax1.imshow(data_1, aspect='auto', cmap='viridis')
+    ax1.set_title(title1)
+    ax1.axis('off')  # Turn off the axis if desired
+
+    # Plot the second array
+    ax2.imshow(data_2, aspect='auto', cmap='viridis')
+    ax2.set_title(title2)
+    ax2.axis('off')  # Turn off the axis if desired
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # Show the plot
+    plt.savefig('plots/stacked_raman_2D.png')  # Should work without issue if the environment supports it
+
+
+def compare_1D_samples(data1_path, data2_path, title1, title2):
+
+    data1 = np.loadtxt(data1_path, delimiter=',')
+    data2 = np.loadtxt(data2_path, delimiter=',')
+
+    data1_1D = convert_2D_to_1D(data1)
+    data2_1D = convert_2D_to_1D(data2)
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(data1_1D, label=title1)
+    plt.plot(data2_1D, label=title2)
+
+    plt.legend()
+
+    plt.savefig('plots/stacked_raman_1D.png')

@@ -34,7 +34,7 @@ def plot_sample_from_each_chemical(X, Y, t, labels_file_path):
     plt.ylabel('Signal Intensity')
     plt.title('Sample Signal from Each Chemical')
     plt.legend()
-    plt.savefig(os.path.join('plots', 'fluro_chemicals_sample.png'))
+    plt.savefig('plots/fluro_chemicals_sample.png')
     plt.show()
 
 

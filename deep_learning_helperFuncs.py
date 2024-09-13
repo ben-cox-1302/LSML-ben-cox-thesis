@@ -4,6 +4,7 @@ from sklearn.metrics import classification_report
 import logging
 import h5py
 import time
+from keras.utils import to_categorical
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 
@@ -97,3 +98,50 @@ def hdf5_generator(file_path, dataset_type='train', batch_size=32):
                 X_batch = X[start:end]
                 Y_batch = Y[start:end]
                 yield X_batch, Y_batch
+
+def alter_dimensions(X, Y):
+    num_classes = len(np.unique(Y))
+    Y_categorical = to_categorical(Y, num_classes)
+    X_expand = np.expand_dims(X, axis=-1)
+    return X_expand, Y_categorical
+
+
+def predict_in_batches_2(model, X, Y, batch_size=32):
+    predictions = []
+    true_labels = []
+    total_time = 0
+
+    num_samples = X.shape[0]
+
+    # Generate predictions in batches
+    for i in range(0, num_samples, batch_size):
+        end_i = min(i + batch_size, num_samples)
+        batch_X = X[i:end_i]
+        batch_Y = Y[i:end_i]
+
+        start_time = time.time()
+        batch_predictions = model.predict(batch_X, verbose=0)
+        end_time = time.time()
+
+        batch_time = end_time - start_time
+        total_time += batch_time
+
+        predictions.extend(batch_predictions)
+        true_labels.extend(batch_Y)
+
+    # Convert lists to numpy arrays for processing
+    predictions = np.array(predictions)
+    true_labels = np.array(true_labels)
+
+    predicted_labels = np.argmax(predictions, axis=1)
+    true_labels = np.argmax(true_labels, axis=1)
+
+    # Print the classification report
+    print(classification_report(true_labels, predicted_labels))
+
+    # Calculate and print the average time per sample
+    average_time_per_sample = total_time / num_samples
+    print(f"Average prediction time per sample: {average_time_per_sample:.6f} seconds")
+
+    # Optionally, return the predictions and true labels for further analysis
+    return predictions, predicted_labels, true_labels
