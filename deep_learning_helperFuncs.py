@@ -5,6 +5,7 @@ import logging
 import h5py
 import time
 from keras.utils import to_categorical
+from tensorflow.keras.utils import Sequence
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 
@@ -145,3 +146,96 @@ def predict_in_batches_2(model, X, Y, batch_size=32):
 
     # Optionally, return the predictions and true labels for further analysis
     return predictions, predicted_labels, true_labels
+
+
+def hdf5_generator_dual_model(file_path, dataset_type='train', batch_size=32):
+
+    with h5py.File(file_path, 'r') as f:
+        X_raman_key = f'X_raman_{dataset_type}'
+        X_fluro_key = f'X_fluro_{dataset_type}'
+        Y_key = f'Y_{dataset_type}'
+        X_raman = f[X_raman_key]
+        X_fluro = f[X_fluro_key]
+        Y = f[Y_key]
+        num_samples_raman = X_raman.shape[0]
+        num_samples_fluro = X_fluro.shape[0]
+
+        if num_samples_raman != num_samples_fluro:
+            raise Exception('The number of samples between Raman and Fluro is different')
+
+        while True:  # Loop forever so the generator never terminates
+            for start in range(0, num_samples_raman, batch_size):
+                end = min(start + batch_size, num_samples_raman)
+                X_raman_batch = X_raman[start:end]
+                X_fluro_batch = X_fluro[start:end]
+                Y_batch = Y[start:end]
+                yield (X_raman_batch, X_fluro_batch), Y_batch
+
+
+class HDF5Generator_dual_model(Sequence):
+    def __init__(self, X_raman, X_fluro, Y, batch_size=32, **kwargs):
+        super().__init__(**kwargs)  # Call the parent constructor with **kwargs
+        self.X_raman = X_raman
+        self.X_fluro = X_fluro
+        self.Y = Y
+        self.batch_size = batch_size
+        self.num_samples = self.Y.shape[0]
+        self.indices = np.arange(self.num_samples)
+        self.on_epoch_end()
+
+    def __len__(self):
+        return int(np.ceil(self.num_samples / self.batch_size))
+
+    def __getitem__(self, idx):
+        batch_indices = self.indices[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        # Get the indices that would sort the batch_indices
+        sorted_order = np.argsort(batch_indices)
+        sorted_batch_indices = batch_indices[sorted_order]
+
+        # Fetch data using sorted indices
+        X_raman_batch_sorted = self.X_raman[sorted_batch_indices]
+        X_fluro_batch_sorted = self.X_fluro[sorted_batch_indices]
+        Y_batch_sorted = self.Y[sorted_batch_indices]
+
+        # Reorder the data back to the original order
+        inverse_sorted_order = np.argsort(sorted_order)
+        X_raman_batch = X_raman_batch_sorted[inverse_sorted_order].astype(np.float32)
+        X_fluro_batch = X_fluro_batch_sorted[inverse_sorted_order].astype(np.float32)
+        Y_batch = Y_batch_sorted[inverse_sorted_order].astype(np.float32)
+
+        # Return data
+        return {'input_raman': X_raman_batch, 'input_fluro': X_fluro_batch}, Y_batch
+
+
+class HDF5Generator_raman_model(Sequence):
+    def __init__(self, X, Y, batch_size=32, **kwargs):
+        super().__init__(**kwargs)  # Call the parent constructor with **kwargs
+        self.X = X
+        self.Y = Y
+        self.batch_size = batch_size
+        self.num_samples = self.Y.shape[0]
+        self.indices = np.arange(self.num_samples)
+        self.on_epoch_end()
+
+    def __len__(self):
+        return int(np.ceil(self.num_samples / self.batch_size))
+
+    def __getitem__(self, idx):
+        batch_indices = self.indices[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        # Get the indices that would sort the batch_indices
+        sorted_order = np.argsort(batch_indices)
+        sorted_batch_indices = batch_indices[sorted_order]
+
+        # Fetch data using sorted indices
+        X_batch_sorted = self.X[sorted_batch_indices]
+        Y_batch_sorted = self.Y[sorted_batch_indices]
+
+        # Reorder the data back to the original order
+        inverse_sorted_order = np.argsort(sorted_order)
+        X_batch = X_batch_sorted[inverse_sorted_order].astype(np.float32)
+        Y_batch = Y_batch_sorted[inverse_sorted_order].astype(np.float32)
+
+        # Return data
+        return X_batch, Y_batch
