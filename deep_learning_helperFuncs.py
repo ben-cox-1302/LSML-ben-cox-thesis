@@ -187,22 +187,13 @@ class HDF5Generator_dual_model(Sequence):
         return int(np.ceil(self.num_samples / self.batch_size))
 
     def __getitem__(self, idx):
-        batch_indices = self.indices[idx * self.batch_size:(idx + 1) * self.batch_size]
+        # Calculate the start and end indices for the batch
+        start_idx = idx * self.batch_size
+        end_idx = min((idx + 1) * self.batch_size, self.num_samples)
 
-        # Get the indices that would sort the batch_indices
-        sorted_order = np.argsort(batch_indices)
-        sorted_batch_indices = batch_indices[sorted_order]
-
-        # Fetch data using sorted indices
-        X_raman_batch_sorted = self.X_raman[sorted_batch_indices]
-        X_fluro_batch_sorted = self.X_fluro[sorted_batch_indices]
-        Y_batch_sorted = self.Y[sorted_batch_indices]
-
-        # Reorder the data back to the original order
-        inverse_sorted_order = np.argsort(sorted_order)
-        X_raman_batch = X_raman_batch_sorted[inverse_sorted_order].astype(np.float32)
-        X_fluro_batch = X_fluro_batch_sorted[inverse_sorted_order].astype(np.float32)
-        Y_batch = Y_batch_sorted[inverse_sorted_order].astype(np.float32)
+        X_raman_batch = self.X_raman[start_idx:end_idx].astype(np.float32)
+        X_fluro_batch = self.X_fluro[start_idx:end_idx].astype(np.float32)
+        Y_batch = self.Y[start_idx:end_idx].astype(np.float32)
 
         # Return data
         return {'input_raman': X_raman_batch, 'input_fluro': X_fluro_batch}, Y_batch
@@ -222,20 +213,12 @@ class HDF5Generator_raman_model(Sequence):
         return int(np.ceil(self.num_samples / self.batch_size))
 
     def __getitem__(self, idx):
-        batch_indices = self.indices[idx * self.batch_size:(idx + 1) * self.batch_size]
+        # Calculate the start and end indices for the batch
+        start_idx = idx * self.batch_size
+        end_idx = min((idx + 1) * self.batch_size, self.num_samples)
 
-        # Get the indices that would sort the batch_indices
-        sorted_order = np.argsort(batch_indices)
-        sorted_batch_indices = batch_indices[sorted_order]
-
-        # Fetch data using sorted indices
-        X_batch_sorted = self.X[sorted_batch_indices]
-        Y_batch_sorted = self.Y[sorted_batch_indices]
-
-        # Reorder the data back to the original order
-        inverse_sorted_order = np.argsort(sorted_order)
-        X_batch = X_batch_sorted[inverse_sorted_order].astype(np.float32)
-        Y_batch = Y_batch_sorted[inverse_sorted_order].astype(np.float32)
+        X_batch = self.X[start_idx:end_idx].astype(np.float32)
+        Y_batch = self.Y[start_idx:end_idx].astype(np.float32)
 
         # Return data
         return X_batch, Y_batch
