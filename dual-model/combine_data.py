@@ -25,9 +25,9 @@ def downsample_data(X, Y, min_counts):
 
 base_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy/'
 
-fluro_path = base_path + 'x_y_processed_fluro_20240908-221426/'
-raman_path = base_path + 'x_y_processed_None_20240909-114336/'
-custom_text = "scriptTesting"
+fluro_path = base_path + 'x_y_processed_fluro_20240927-180002/'
+raman_path = base_path + 'x_y_processed_None_20240927-162019/'
+custom_text = "phosRedPowRamanCleanFluro"
 
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
 folder_name = f"{date_of_processing}-{custom_text}"

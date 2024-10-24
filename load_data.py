@@ -8,12 +8,12 @@ import gc
 import matplotlib.pyplot as plt
 import shutil
 
-MANUAL_SPLIT = True
+MANUAL_SPLIT = False
 
 # Data being imported
-data_to_use = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240709-203523/final_data.h5'
+data_to_use = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_200_20240912-231147/final_data.h5'
 folder_labels = \
-    '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_2000_20240709-203523/folder_labels.txt'
+    '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_200_20240912-231147/folder_labels.txt'
 
 # data_to_use = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/final_data.h5'
 # folder_labels = '/work/laserml/Data/Ben_Cox/Data_Staging/data_xy/x_y_processed_2001_20240513-205456/folder_labels.txt'
@@ -21,9 +21,9 @@ folder_labels = \
 # Data being exported
 # Define the date of processing and custom text
 date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
-custom_text = "diverse_sample_report_multiclass"
+custom_text = "clean_testingIfSplitWork_2"
 folder_name = f"{date_of_processing}-{custom_text}"
-base_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/'
+base_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split/'
 full_path = os.path.join(base_path, folder_name)
 
 print("Loading in the data: ")
@@ -82,7 +82,6 @@ with h5py.File(data_to_use, 'r') as h5f:
 
         gc.collect()
 
-    # Optional: Print the sizes to verify the splits
     print(f"Train set size: {len(X_train)}")
     print(f"Validation set size: {len(X_val)}")
     print(f"Test set size: {len(X_test)}")
@@ -146,16 +145,11 @@ with h5py.File(data_to_use, 'r') as h5f:
     axs[2].set_ylabel('Occurrences', fontsize="16")
     axs[2].set_xticks(np.arange(Y_test.shape[1]))
 
-    # Improve layout to prevent overlap
     plt.tight_layout()
 
     plt.savefig('class_balance.png')
 
     plt.close()
-
-    # class_labels = ['Lithium Niobate', 'Water']
-
-    # evaluation_functions.show_samples(X_train, Y_train, class_labels, samples_per_class=1)
 
     # Clean up
     del X, Y, X_train, X_val, X_test, Y_train, Y_val, Y_test

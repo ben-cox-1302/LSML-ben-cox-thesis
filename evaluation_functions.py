@@ -10,6 +10,9 @@ import logging
 from tensorflow.keras import backend as K
 import deep_learning_helperFuncs
 from datetime import datetime
+from sklearn.metrics import classification_report
+import time
+import h5py
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -33,7 +36,7 @@ def read_label_mapping(file_path):
     return label_mapping
 
 
-def create_confusion_matrix_comparison_gen(model, file_path, train_prefix, test_prefix, model_type, is_multiclass=False):
+def create_confusion_matrix_comparison_gen(model, file_path, train_prefix, test_prefix, model_type, is_multiclass=False, is_dual=False):
     """
     Generates confusion matrices for both training and testing datasets from an HDF5 file,
     showing performance visualization using predictions made in batches and labeling axes using labels from a specified file.
@@ -58,7 +61,13 @@ def create_confusion_matrix_comparison_gen(model, file_path, train_prefix, test_
     # Training set visualization
     ax = fig.add_subplot(1, 2, 1)
     print("Training Dataset: ")
-    pred_train, indexes_train, gt_idx_train = deep_learning_helperFuncs.predict_in_batches(model, file_path, train_prefix, batch_size=32, is_multiclass=is_multiclass)
+    if is_dual:
+        pred_train, indexes_train, gt_idx_train = deep_learning_helperFuncs.predict_in_batches_dual(model, file_path,
+                                                                                               train_prefix,
+                                                                                               batch_size=32,
+                                                                                               is_multiclass=is_multiclass)
+    else:
+        pred_train, indexes_train, gt_idx_train = deep_learning_helperFuncs.predict_in_batches(model, file_path, train_prefix, batch_size=32, is_multiclass=is_multiclass)
     labels = [labels_dict[idx] for idx in np.unique(gt_idx_train)]
     confusion_mtx_train = confusion_matrix(gt_idx_train, indexes_train)
     sns.heatmap(confusion_mtx_train, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
@@ -70,7 +79,13 @@ def create_confusion_matrix_comparison_gen(model, file_path, train_prefix, test_
     # Test set visualization
     ax = fig.add_subplot(1, 2, 2)
     print("Testing Dataset: ")
-    pred_test, indexes_test, gt_idx_test = deep_learning_helperFuncs.predict_in_batches(model, file_path, test_prefix, batch_size=32, is_multiclass=is_multiclass)
+    if is_dual:
+        pred_test, indexes_test, gt_idx_test = deep_learning_helperFuncs.predict_in_batches_dual(model, file_path,
+                                                                                               test_prefix,
+                                                                                               batch_size=32,
+                                                                                               is_multiclass=is_multiclass)
+    else:
+        pred_test, indexes_test, gt_idx_test = deep_learning_helperFuncs.predict_in_batches(model, file_path, test_prefix, batch_size=32, is_multiclass=is_multiclass)
     labels = [labels_dict[idx] for idx in np.unique(gt_idx_test)]
     confusion_mtx_test = confusion_matrix(gt_idx_test, indexes_test)
     sns.heatmap(confusion_mtx_test, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
@@ -85,6 +100,10 @@ def create_confusion_matrix_comparison_gen(model, file_path, train_prefix, test_
     # Create the folder if it doesn't already exist
     if not os.path.exists('plots'):
         os.makedirs('plots')
+
+    date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    save_name = date_of_processing + '_ConfMatrix.png'
 
     # Save the figure
     plt.savefig(os.path.join('plots', model_type + '_ConfMatrix.png'))
@@ -155,9 +174,11 @@ def show_samples(X, Y, class_labels, samples_per_class=2):
     plt.savefig('plots/samples_example.png')
 
 
-def create_confusion_matrix_comparison_no_gen(model, train, train_y, test, test_y, model_type):
+def create_confusion_matrix_comparison_no_gen(model, label_path, train, train_y, test, test_y, model_type):
     """
-    Creates a confusion matrix for both the train and test set without using a generator and saves it as a png
+    Creates a confusion matrix for both the train and test set without using a generator and saves it as a png.
+    Additionally, it prints the classification report including precision, recall, F1-score, and inference time.
+
     Parameters
     ----------
     model : the model being used for the predictions and evaluation
@@ -167,45 +188,85 @@ def create_confusion_matrix_comparison_no_gen(model, train, train_y, test, test_
     test_y : the testing y data
     model_type : the model type for saving
     """
-    fig = plt.figure(figsize=[10, 15])
 
-    ax = fig.add_subplot(2, 1, 1)
-    # predict on the training set
-    pred = model.predict(train, verbose=False);
-    # get indexes for the predictions and ground truth, this is converting back from a one-hot representation
-    # to a single index
+    # Read label mappings from file
+    labels_dict = read_label_mapping(label_path)
+
+    fig = plt.figure(figsize=[26, 10])
+
+    # Training set visualization
+    ax = fig.add_subplot(1, 2, 1)
+
+    # Measure inference time for the training set
+    print("Training Dataset Inference:")
+    start_time = time.time()  # Start timer
+    pred = model.predict(train, verbose=False)  # Predict on the training set
+    total_time_train = time.time() - start_time  # Calculate total elapsed time for training set
+    time_per_sample_train = total_time_train / train.shape[0]  # Time per sample
+    print(f"Total inference time for training set: {total_time_train:.4f} seconds")
+    print(f"Inference time per sample for training set: {time_per_sample_train:.6f} seconds")
+
+    # Convert one-hot encoding to single index labels
     indexes = tf.argmax(pred, axis=1)
     gt_idx = tf.argmax(train_y, axis=1)
+    labels = [labels_dict[idx] for idx in np.unique(gt_idx)]
     num_classes_train = train_y.shape[1]
-    # plot the confusion matrix, I'm using tensorflow and seaborn here, but you could use
-    # sklearn as well
+
+    # Confusion matrix
     confusion_mtx = tf.math.confusion_matrix(gt_idx, indexes)
-    sns.heatmap(confusion_mtx, xticklabels=range(num_classes_train), yticklabels=range(num_classes_train),
-            annot=True, fmt='g', ax=ax)
-    # set the title to the accuracy
-    ax.set_title('Training Set Performance: %f' % sklearn.metrics.accuracy_score(gt_idx, indexes, normalize=True))
+    sns.heatmap(confusion_mtx, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
+
+    # Set the title to the accuracy
+    accuracy_train = accuracy_score(gt_idx, indexes)
+    ax.set_title('Training Set Performance: %f' % accuracy_train)
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
 
-    # repeat visualisation for the test set
-    ax = fig.add_subplot(2, 1, 2)
-    pred = model.predict(test, verbose=False);
+    # Print classification report for the training set
+    print("Training Set Classification Report:")
+    print(classification_report(gt_idx, indexes, target_names=[str(i) for i in range(num_classes_train)]))
+
+    # Test set visualization
+    ax = fig.add_subplot(1, 2, 2)
+
+    # Measure inference time for the testing set
+    print("Testing Dataset Inference:")
+    start_time = time.time()  # Start timer
+    pred = model.predict(test, verbose=False)  # Predict on the testing set
+    total_time_test = time.time() - start_time  # Calculate total elapsed time for testing set
+    time_per_sample_test = total_time_test / test.shape[0]  # Time per sample
+    print(f"Total inference time for testing set: {total_time_test:.4f} seconds")
+    print(f"Inference time per sample for testing set: {time_per_sample_test:.6f} seconds")
+
     indexes = tf.argmax(pred, axis=1)
     gt_idx = tf.argmax(test_y, axis=1)
     num_classes_test = test_y.shape[1]
+
     confusion_mtx = tf.math.confusion_matrix(gt_idx, indexes)
-    sns.heatmap(confusion_mtx, xticklabels=range(num_classes_test), yticklabels=range(num_classes_test),
-            annot=True, fmt='g', ax=ax)
-    ax.set_title('Testing Set Performance: %f' % sklearn.metrics.accuracy_score(gt_idx, indexes, normalize=True))
+    labels = [labels_dict[idx] for idx in np.unique(gt_idx)]
+    sns.heatmap(confusion_mtx, annot=True, fmt='g', ax=ax, xticklabels=labels, yticklabels=labels)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
+
+    # Set the title to the accuracy
+    accuracy_test = accuracy_score(gt_idx, indexes)
+    ax.set_title('Testing Set Performance: %f' % accuracy_test)
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
 
+    # Print classification report for the testing set
+    print("Testing Set Classification Report:")
+    print(classification_report(gt_idx, indexes, target_names=[str(i) for i in range(num_classes_test)]))
+
+    plt.tight_layout()
+
+    # Create folder if it doesn't exist
     if not os.path.exists('plots'):
         os.makedirs('plots')
 
-    save_name = model_type + '_ConfMatrix.png'
+    date_of_processing = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_name = date_of_processing + '_' + model_type + '_ConfMatrix.png'
 
-    # Save the figure
     plt.savefig(os.path.join('plots', save_name))
 
 
@@ -246,3 +307,35 @@ def compare_data_against_model(model, data_dict : dict[str, list], label_file):
 
     # Save the figure
     plt.savefig(os.path.join('plots', save_name))
+
+
+def plot_class_balance(file_path, save_name):
+    data_to_use = os.path.join(file_path, 'split_processed_data.h5')
+    labels_file = os.path.join(file_path, 'folder_labels.txt')
+
+    # Reading the label mapping from the file
+    labels = read_label_mapping(labels_file)
+
+    with h5py.File(data_to_use, 'r') as h5f:
+        Y_train = h5f['Y_train'][:]
+        Y_val = h5f['Y_val'][:]
+        Y_test = h5f['Y_test'][:]
+
+    Y = np.concatenate([Y_train, Y_val, Y_test], axis=0)
+
+    # Class balance histogram
+    plt.hist(np.argmax(Y, axis=1), bins=np.arange(Y_train.shape[1] + 1) - 0.5, rwidth=0.7)
+
+    title = f'Class Balance for {save_name.replace("_", " ").replace("-", " ")}'
+
+    plt.title(title, fontsize="20")
+    plt.xlabel('Classifiers', fontsize="16")
+    plt.ylabel('Occurrences', fontsize="16")
+
+    # Set x-ticks using class indices and label names
+    class_indices = np.arange(Y_train.shape[1])
+    plt.xticks(class_indices, [labels[idx] for idx in class_indices], rotation=45, ha="right")
+
+    plt.tight_layout()  # Ensure labels don't overlap
+    plt.savefig(f'plots/class_balance_{save_name}.png')
+    plt.show()

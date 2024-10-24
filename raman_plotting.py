@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import os
 from PIL import Image
+from datetime import datetime
+import matplotlib.colors as mcolors
+import random
 
 
 def simulate_accumulations(pulse_data):
@@ -136,7 +139,7 @@ def calculate_raman_shift(wl_scattered_light, wl_incident_light):
     return raman_shift
 
 
-def calculate_raman_shift_array(wl_array, wl_incident_light):
+def calculate_raman_shift_array(wl_array, wl_incident_light=355):
     """
     Calculates the raman shift for an array of wavelengths given by the LightField Software
     Parameters
@@ -360,3 +363,66 @@ def compare_1D_samples(data1_path, data2_path, title1, title2):
     plt.legend()
 
     plt.savefig('plots/stacked_raman_1D.png')
+
+
+def generate_shades(base_color, num_shades):
+    base_rgb = mcolors.hex2color(base_color)
+    shades = []
+
+    for i in range(num_shades):
+        factor = random.uniform(0.5, 1.0)  # Randomly adjust the lightness factor
+        shade = [factor * channel for channel in base_rgb]
+        shades.append(shade)
+
+    return shades
+
+def compare_data_noise_raman(data_dict: dict[str, str], title: str, max_samples=None):
+
+    font_size = 20
+    num_plots = len(data_dict)
+
+    # Define a base color for standardization
+    base_color = '#1f77b4'  # You can choose any base color here
+
+    fig, ax = plt.subplots(1, num_plots, figsize=(min(10 * num_plots, 30), 8))
+
+    if num_plots == 1:
+        ax = [ax]
+
+    data_dict_vecs = {}
+
+    for data_type, data_path in data_dict.items():
+        print(f'Loading {data_type}')
+        data_matrices = loading_functions.load_csv_as_matrices(data_path, max_samples=max_samples)
+
+        # Process each 2D vector individually
+        data_vecs = [convert_2D_to_1D(matrix) for matrix in data_matrices]
+
+        # Store processed vectors
+        data_dict_vecs[data_type] = data_vecs
+
+    for i, (data_type, signals) in enumerate(data_dict_vecs.items()):
+        print(f'Plotting: {data_type}')
+
+        num_signals = len(signals)
+        shades = generate_shades(base_color, num_signals)  # Generate randomized shades
+
+        for j, signal in enumerate(signals):
+            ax[i].plot(signal, color=shades[j])
+
+        ax[i].set_xlabel('Wavelength (nm)', fontsize=font_size)
+        ax[i].set_ylabel('Raman Intensity (Counts)', fontsize=font_size)
+        data_type_title = data_type.replace("-", " ")
+        ax[i].set_title(f'{title} : {data_type_title}', fontsize=font_size)
+        ax[i].tick_params(axis='both', which='major', labelsize=font_size)
+
+    plt.tight_layout()
+
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+
+    save_name = title + '_NoiseComparison.png'
+
+    # Save the figure
+    plt.savefig(os.path.join('plots', save_name))
+

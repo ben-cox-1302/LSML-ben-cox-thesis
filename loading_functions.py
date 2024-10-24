@@ -5,6 +5,8 @@ import os
 import pandas as pd
 import csv
 from datetime import datetime
+import h5py
+import raman_plotting
 
 
 def load_csv_as_matrices(folder_path, max_samples=None, skip_alternate_rows=False):
@@ -82,7 +84,6 @@ def load_wavelength_csv_as_array(folder_path):
     if len(zip_files) > 1:
         raise RuntimeError("More than one zip file found; please ensure only one zip file is present.")
 
-    # Open the zip file
     with zipfile.ZipFile(zip_files[0], 'r') as z:
         # List all files in the zip file
         file_list = z.namelist()
@@ -181,3 +182,39 @@ def fluro_to_xy(folders_path, save_path):
     np.save(os.path.join(save_folder, 't.npy'), t)
 
     return X, Y, t, labels_file_path
+
+
+def convert_processed_data_to_1D(data_path, is_dual=False):
+
+    if is_dual:
+        with (h5py.File(data_path, 'r') as h5f):
+            X_raman_train = h5f['X_raman_train'][:]
+            X_raman_val = h5f['X_raman_val'][:]
+            X_raman_test = h5f['X_raman_test'][:]
+            X_fluro_train = h5f['X_fluro_train'][:]
+            X_fluro_val = h5f['X_fluro_val'][:]
+            X_fluro_test = h5f['X_fluro_test'][:]
+            Y_train = h5f['Y_train'][:]
+            Y_val = h5f['Y_val'][:]
+            Y_test = h5f['Y_test'][:]
+
+            X_raman_train = np.array([raman_plotting.convert_2D_to_1D(vec) for vec in X_raman_train])
+            X_raman_val = np.array([raman_plotting.convert_2D_to_1D(vec) for vec in X_raman_val])
+            X_raman_test = np.array([raman_plotting.convert_2D_to_1D(vec) for vec in X_raman_test])
+            return X_raman_train, X_raman_val, X_raman_test, X_fluro_train, X_fluro_val, X_fluro_test, Y_train, Y_val, Y_test
+    else:
+        with h5py.File(data_path, 'r') as h5f:
+            X_train = h5f['X_train'][:]
+            X_val = h5f['X_val'][:]
+            X_test = h5f['X_test'][:]
+            Y_train = h5f['Y_train'][:]
+            Y_val = h5f['Y_val'][:]
+            Y_test = h5f['Y_test'][:]
+
+
+            X_train = np.array([raman_plotting.convert_2D_to_1D(vec) for vec in X_train])
+            X_val = np.array([raman_plotting.convert_2D_to_1D(vec) for vec in X_val])
+            X_test = np.array([raman_plotting.convert_2D_to_1D(vec) for vec in X_test])
+
+            return X_train, X_val, X_test, Y_train, Y_val, Y_test
+

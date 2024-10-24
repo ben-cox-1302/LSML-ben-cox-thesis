@@ -8,7 +8,6 @@ import tensorflow as tf
 import keras
 
 # Display
-from IPython.display import Image, display
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
@@ -31,8 +30,6 @@ def get_img_array(img_path):
     plt.show()
     # `array` is a float32 Numpy array of shape (299, 299, 3)
     array = keras.utils.img_to_array(img)
-    # We add a dimension to transform our array into a "batch"
-    # of size (1, 299, 299, 3)
     array = np.expand_dims(array, axis=0)
     return array
 
@@ -40,7 +37,7 @@ def get_img_array(img_path):
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
     # Check if model.output is a list and take the appropriate output
     if isinstance(model.output, list):
-        output = model.output[0]  # Assuming you need the first output
+        output = model.output[0]
     else:
         output = model.output
 
@@ -65,7 +62,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None
     return heatmap.numpy()
 
 
-def save_and_display_gradcam(img_path, heatmap, cam_path="plots/cam.jpg", alpha=0.4):
+def save_and_display_gradcam(img_path, heatmap, chem_name, alpha=0.4):
     # Load the original image
     img = load_csv_as_np_array(img_path)
 
@@ -88,13 +85,24 @@ def save_and_display_gradcam(img_path, heatmap, cam_path="plots/cam.jpg", alpha=
     superimposed_img = jet_heatmap * alpha + img
     superimposed_img = keras.utils.array_to_img(superimposed_img)
 
-    # Save the superimposed image
-    superimposed_img.save(cam_path)
+    save_path = 'plots/' + chem_name
 
-    # Display Grad CAM using matplotlib
+    # Create a Matplotlib figure
+    plt.figure(figsize=(8, 8))
+
+    # Display the superimposed image
     plt.imshow(superimposed_img)
-    plt.axis('off')  # No axes for a cleaner image
-    plt.show()
+    plt.axis('off')  # Hide the axes for a cleaner image
+
+    title = f'Grad Cam: {chem_name}'
+
+    plt.title(title, fontsize=16)  # You can adjust the fontsize if needed
+
+    # Save the plot with the superimposed image and title
+    plt.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
+
+    # Close the figure to prevent display
+    plt.close()
 
 
 def remove_cosmic_rays(data, threshold_factor=5):
@@ -127,13 +135,22 @@ def remove_cosmic_rays(data, threshold_factor=5):
 
     return cleaned_data
 
-# linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/07-06-24-LithiumNiobate_1pulse_1000acq/07-06-24-LithiumNiobate_1pulse_1000acq5.csv'
-# linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/28-03-24-Paracetamol_1pulse_2000acq_BC/28-03-24-Paracetamol_1pulse_2000acq_BC50.csv'
-# linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/05-04-24-Bicarb_1pulse_2000acq_BC/05-04-24-Bicarb_1pulse_2000acq_BC5.csv'
-# linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/05-04-24-DeepHeat_1pulse_2000acq_BC/05-04-24-DeepHeat_1pulse_2000acq_BC50.csv'
-linb_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/04-04-24-Water_1pulse_2000acq_BC/04-04-24-Water_1pulse_2000acq_BC5.csv'
 
-model_path = '/home/bdc-pc/git_repos/LSML-ben-cox-thesis/models/diverse_model_grad_cam.keras'
+base_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_raw/grad_cam/'
+
+chem_paths = {
+    'Lithium-Niobate' : base_path + '07-06-24-LithiumNiobate_1pulse_1000acq/07-06-24-LithiumNiobate_1pulse_1000acq5.csv',
+    'Paracetamol' :     base_path + '28-03-24-Paracetamol_1pulse_2000acq_BC/28-03-24-Paracetamol_1pulse_2000acq_BC5.csv',
+    'Bi-Carb' :         base_path + '05-04-24-Bicarb_1pulse_2000acq_BC/05-04-24-Bicarb_1pulse_2000acq_BC5.csv',
+    'Deep-Heat' :       base_path + '05-04-24-DeepHeat_1pulse_2000acq_BC/05-04-24-DeepHeat_1pulse_2000acq_BC5.csv',
+    'Water' :           base_path + '04-04-24-Water_1pulse_2000acq_BC/04-04-24-Water_1pulse_2000acq_BC5.csv',
+    'Barium' :          base_path + '05-04-24-Barium_1pulse_2000acq_BC/05-04-24-Barium_1pulse_2000acq_BC5.csv',
+    'Erythritol' :      base_path + '28-03-24-Erythritol_1pulse_2000acq_BC/28-03-24-Erythritol_1pulse_2000acq_BC5.csv',
+    'Citric-Acid' :     base_path + '28-03-24-CitricAcid_1pulse_2000acq_BC/28-03-24-CitricAcid_1pulse_2000acq_BC5.csv',
+    'Flour' :           base_path + '04-04-24-Flour_1pulse_2000acq_BC/04-04-24-Flour_1pulse_2000acq_BC5.csv'
+}
+
+model_path = '/home/benjamin/git_repos/LSML-ben-cox-thesis/models/cleanData_2D_gradCam.keras'
 last_layer_name = 'conv2d_layer5'
 
 model = tf.keras.models.load_model(model_path)
@@ -141,20 +158,14 @@ model = tf.keras.models.load_model(model_path)
 # Remove last layer's softmax
 model.layers[-1].activation = None
 
-linb_img = get_img_array(linb_path)
+for name, path in chem_paths.items():
+    print(f'Processing {name}')
+    chem_img = get_img_array(path)
+    # Print what the top predicted class is
+    preds = model.predict(chem_img)
+    predicted_class_indices = np.argmax(preds, axis=1)
+    print("Predicted Class:", predicted_class_indices)
+    # Generate class activation heatmap
+    heatmap = make_gradcam_heatmap(chem_img, model, 'conv2d_layer5')
 
-print(np.max(linb_img))
-
-# Print what the top predicted class is
-preds = model.predict(linb_img)
-predicted_class_indices = np.argmax(preds, axis=1)
-print("Predicted Class:", predicted_class_indices)
-
-# Generate class activation heatmap
-heatmap = make_gradcam_heatmap(linb_img, model, 'conv2d_layer5')
-
-# Display heatmap
-plt.matshow(heatmap)
-plt.show()
-
-save_and_display_gradcam(linb_path, heatmap)
+    save_and_display_gradcam(path, heatmap, name)

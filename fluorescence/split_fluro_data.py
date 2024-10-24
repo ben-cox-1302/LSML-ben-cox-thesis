@@ -8,9 +8,9 @@ from keras.utils import to_categorical
 from sklearn.preprocessing import MinMaxScaler
 import loading_functions
 
-xy_data_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_fluro_20240805-114731'
+xy_data_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy/x_y_processed_fluro_20241007-145242_noMovStage'
 labels_file_path = os.path.join(xy_data_path, 'folder_labels.txt')
-save_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split'
+save_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split'
 
 folder_name = f"x_y_processed_fluro_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 save_folder_path = os.path.join(save_path, folder_name)

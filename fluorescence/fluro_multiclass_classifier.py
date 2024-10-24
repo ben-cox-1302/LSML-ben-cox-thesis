@@ -17,8 +17,9 @@ import evaluation_functions
 
 batch_size = 32
 epochs = 50
-model_name = 'fluro_model_normalized'
-data_xy_split_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_xy_split/x_y_processed_fluro_20240805-115146'
+model_name = 'fluro_noMovStage'
+data_xy_split_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy_split/x_y_processed_fluro_20241007-150123_noMovStage/'
+label_path = os.path.join(data_xy_split_path, 'folder_labels.txt')
 
 model_save_path = 'models/'
 model_name = f"{model_name}{datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -45,15 +46,17 @@ x = layers.MaxPooling1D(pool_size=2, name='maxpool1d_layer4')(x)
 x = layers.Conv1D(filters=16, kernel_size=3, padding='same', activation='relu', name='conv1d_layer5')(x)
 x = layers.MaxPooling1D(pool_size=2, name='maxpool1d_layer5')(x)
 
-x = layers.GlobalAveragePooling1D(name='global_avg_pooling')(x)
+x = layers.Flatten(name='flatten')(x)
 
 x = layers.Dense(512, activation='relu', name='dense_layer')(x)
 x = layers.Dropout(0.5, name='dropout_layer')(x)  # Add dropout to prevent overfitting
 
-outputs = layers.Dense(13, activation='softmax', name='output_layer')(x)
+outputs = layers.Dense(9, activation='softmax', name='output_layer')(x)
 
 model = keras.Model(inputs=inputs, outputs=outputs, name="modified_1d_model")
 model.summary()
+
+keras.utils.plot_model(model, to_file='plots/fluro_model_plot.png', show_shapes=True, show_layer_names=True)
 
 model.compile(
   # categorical cross entropy loss
@@ -79,11 +82,17 @@ print("Y_test shape: " + str(Y_test.shape))
 
 print("X_train Single Sample Shape: " + str(X_train[0].shape))
 
+early_stopping = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.00001)
+model_checkpoint = keras.callbacks.ModelCheckpoint(filepath=model_file_path,
+                                                   monitor='val_accuracy', save_best_only=True)
+
 history = model.fit(X_train, Y_train,
                     batch_size=batch_size,
                     epochs=epochs,
                     validation_data=(X_val, Y_val),
-                    verbose=True)
+                    verbose=True,
+                    callbacks=[early_stopping, model_checkpoint])
 
 # Save model
 model.save(model_file_path)
@@ -108,5 +117,5 @@ ax.set_ylabel('Loss', fontsize="20")
 # Save the figure
 plt.savefig(os.path.join('plots', (model_name + '.png')))
 
-evaluation_functions.create_confusion_matrix_comparison_no_gen(model, X_train, Y_train,
+evaluation_functions.create_confusion_matrix_comparison_no_gen(model, label_path, X_train, Y_train,
                                                                X_test, Y_test, 'fluro_model')

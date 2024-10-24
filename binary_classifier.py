@@ -34,7 +34,7 @@ logging.getLogger('matplotlib.font_manager').disabled = True
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-# Specify the directory where your .npy files are saved
+# Specify the directory where .npy files are saved
 data_to_use = 'data/data_processed/x_y_processed_20240418-140452/'
 
 # Check if the directory exists
@@ -53,24 +53,11 @@ learning_rate = 0.0001
 
 # Split the data into training and test sets with stratification
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42, stratify=Y)
-#
-## Save the arrays to .npy files
-#np.save('data/X_train.npy', X_train)
-#np.save('data/X_test.npy', X_test)
-#np.save('data/Y_train.npy', Y_train)
-#np.save('data/Y_test.npy', Y_test)
-
-# Load the arrays from .npy files
-#X_train = np.load('data/X_train.npy')
-#X_test = np.load('data/X_test.npy')
-#Y_train = np.load('data/Y_train.npy')
-#Y_test = np.load('data/Y_test.npy')
 
 # Check the size of the outputs to ensure the split is as expected
 print("Training set shape:", X_train.shape, Y_train.shape)
 print("Test set shape:", X_test.shape, Y_test.shape)
 
-# Assuming `X_train` and `X_test` are your training and testing datasets respectively
 X_train = np.expand_dims(X_train, axis=-1)  # Adds a channel dimension
 X_test = np.expand_dims(X_test, axis=-1)    # Adds a channel dimension
 
@@ -81,7 +68,6 @@ evaluation_functions.plot_images(X_train, Y_train)
 
 # Build the DCNN
 
-# Define the input shape according to your actual data
 inputs = keras.Input(shape=(253, 1024, 1), name='img')
 
 # Simplify and correct model layers
@@ -114,7 +100,6 @@ model_vgg.compile(
 )
 
 # train the model
-# we'll capture the returned history object that will tell us about the training performance
 vgg_binClassifier_train_start = process_time()
 
 # Define batch_size and epochs
@@ -166,11 +151,4 @@ plt.savefig(os.path.join('plots', 'LossAcc.png'))
 
 evaluation_functions.create_confusion_matrix_comparison(model_vgg, X_train, Y_train, X_test, Y_test, 'DCNN_binClassifier')
 
-# Assuming `X_test` and `Y_test` are your test data and labels respectively
 predictions = model_vgg.predict(X_test[:10])  # Make predictions on the first 10 samples
-
-# Define a function to display images with their predicted values
-
-
-# Display images with predictions
-#display_images_with_predictions(X_test[:10], predictions, Y_test[:10])

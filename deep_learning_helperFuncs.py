@@ -217,8 +217,70 @@ class HDF5Generator_raman_model(Sequence):
         start_idx = idx * self.batch_size
         end_idx = min((idx + 1) * self.batch_size, self.num_samples)
 
-        X_batch = self.X[start_idx:end_idx].astype(np.float32)
-        Y_batch = self.Y[start_idx:end_idx].astype(np.float32)
+        X_batch = self.X[start_idx:end_idx]
+        Y_batch = self.Y[start_idx:end_idx]
 
         # Return data
         return X_batch, Y_batch
+
+
+def predict_in_batches_dual(model, file_path, dataset_prefix, batch_size=32, is_multiclass=False):
+    """
+    Predicts outputs in batches directly from an HDF5 file, adapting to both binary and multiclass
+    classifications with appropriate activation functions, and reducing memory usage on the GPU.
+    Parameters:
+        model: The trained model to use for predictions.
+        file_path: Path to the HDF5 file containing 'X' and 'Y' datasets.
+        dataset_prefix: A string to specify the dataset group, e.g., 'train', 'test', or 'val'.
+        batch_size: Size of each batch to use during prediction.
+        is_multiclass: Boolean indicating if the classification is multiclass (True) or binary (False).
+    Returns:
+        None; prints the classification report based on predictions.
+    """
+    predictions = []
+    true_labels = []
+    total_time = 0
+
+    # Open the HDF5 file and read batches directly
+    with h5py.File(file_path, 'r') as h5f:
+        X_raman_data = h5f[f'X_raman_{dataset_prefix}']
+        X_fluro_data = h5f[f'X_fluro_{dataset_prefix}']
+        Y_true = h5f[f'Y_{dataset_prefix}']
+        num_samples = X_raman_data.shape[0]
+
+        # Generate predictions in batches
+        for i in range(0, num_samples, batch_size):
+            end_i = min(i + batch_size, num_samples)
+            batch_raman_X = X_raman_data[i:end_i]
+            batch_fluro_X = X_fluro_data[i:end_i]
+            batch_Y = Y_true[i:end_i]
+
+            start_time = time.time()
+            batch_predictions = model.predict([batch_fluro_X, batch_raman_X], verbose=0)
+            end_time = time.time()
+
+            batch_time = end_time - start_time
+            total_time += batch_time
+
+            predictions.extend(batch_predictions)
+            true_labels.extend(batch_Y)
+
+    # Convert lists to numpy arrays for processing
+    predictions = np.array(predictions)
+    true_labels = np.array(true_labels)
+
+    # Process predictions based on the type of classification
+    if is_multiclass:
+        predicted_labels = np.argmax(predictions, axis=1)
+        true_labels = np.argmax(true_labels, axis=1)
+    else:
+        predicted_labels = (predictions.flatten() > 0.5).astype(int)
+
+    # Print the classification report
+    print(classification_report(true_labels, predicted_labels))
+
+    # Calculate and print the average time per sample
+    average_time_per_sample = total_time / num_samples
+    print(f"Average prediction time per sample: {average_time_per_sample:.6f} seconds")
+
+    return predictions, predicted_labels, true_labels

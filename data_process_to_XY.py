@@ -3,16 +3,14 @@ import glob
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import zipfile
-import matplotlib.pyplot as plt
 import h5py
 import loading_functions
 
 
 # User can specify the maximum number of samples to load from each folder
-max_samples_per_folder = None  # Set this to None to load all samples
+max_samples_per_folder = 200  # Set this to None to load all samples
 
-directory = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_raw/mid_sem_2_diverse/'
+directory = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_raw/mid_year_diverse_data/'
 files_and_folders = os.listdir(directory)
 folders = [item for item in files_and_folders if os.path.isdir(os.path.join(directory, item))]
 base_directory = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy/'
@@ -44,8 +42,8 @@ with open(labels_file_path, 'w') as f:
 total_size_X = sum(sizes_X)
 total_size_Y = sum(sizes_Y)
 
-dtype_X = np.float16  # Assuming data_X uses float32
-dtype_Y = np.uint8    # Assuming data_Y uses uint8
+dtype_X = np.float16  # minimise size
+dtype_Y = np.uint8
 
 memmap_X = np.memmap(os.path.join(save_path, 'X.dat'), dtype=dtype_X, mode='w+', shape=(total_size_X, data_X.shape[1], data_X.shape[2]))
 memmap_Y = np.memmap(os.path.join(save_path, 'Y.dat'), dtype=dtype_Y, mode='w+', shape=(total_size_Y,))

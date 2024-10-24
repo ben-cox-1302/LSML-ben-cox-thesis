@@ -3,13 +3,11 @@ import os
 import fluro_plotting
 from sklearn.preprocessing import MinMaxScaler
 
-file_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data/data_raw/28-05-24-DecayData'
-save_path = '/media/bdc-pc/14A89E95A89E74C8/git_repos/data'
+file_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_raw/noisy_fluro_data_noRedPow'
+save_path = '/media/benjamin/14A89E95A89E74C8/git_repos/data/data_xy/'
 NORMALIZE = False
 
-save_path_xy = os.path.join(save_path, 'data_xy')
-
-X, Y, t, folder_labels_path = loading_functions.fluro_to_xy(file_path, save_path_xy)
+X, Y, t, folder_labels_path = loading_functions.fluro_to_xy(file_path, save_path)
 
 if NORMALIZE:
     print("Normalizing Data")
